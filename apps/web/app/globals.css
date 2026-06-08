@@ -1,0 +1,939 @@
+@import 'tailwindcss';
+@import '@xyflow/react/dist/style.css';
+@import 'katex/dist/katex.min.css';
+@import 'highlight.js/styles/github-dark.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+    color-scheme: light;
+    --rf-canvas-bg: #f0ebe0;
+    --rf-grid: #a89a72;
+    /* `--rf-dot` is an alias kept for any external consumers; the in-tree
+     * Background SVG is themed via the `.react-flow__background` rule below. */
+    --rf-dot: var(--rf-grid);
+    /* Outer stop of the canvas vignette. A var so the depth-tint rules below
+     * can tighten/loosen the frame per tier (L2 → L1 → L0). */
+    --rf-vignette: rgba(0, 0, 0, 0.11);
+}
+
+.dark {
+    color-scheme: dark;
+    --rf-canvas-bg: #15130f;
+    --rf-grid: #252119;
+    --rf-dot: var(--rf-grid);
+    --rf-vignette: rgba(0, 0, 0, 0.3);
+}
+
+html,
+body,
+#__next {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        'Segoe UI',
+        sans-serif;
+    background: #f5f1e8;
+    color: #1a1815;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
+}
+
+.dark body {
+    background: #1a1816;
+    color: #e8e3d8;
+}
+
+.react-flow {
+    background: var(--rf-canvas-bg);
+    /* Ease the ambient shift so a same-mount kind change (rare) glides; the
+     * common drill remounts the canvas, so this is just polish insurance. */
+    transition: background-color 200ms ease;
+}
+
+/* Depth tint — the canvas ambient color encodes which tier you're standing in,
+ * so "where am I in the drill-down" reads off the background itself, not just
+ * the breadcrumb. Cool (L2 orchestration) → neutral beige (L1 agent) → warm
+ * (L0 composition): descending toward the warm core feels like going deeper,
+ * and the vignette tightens a notch each tier so the frame closes in as you
+ * drill. L1 (`kind: "l1"`) keeps the `:root` baseline. Sourced from the graph
+ * kind alone, so it holds for drill-in, breadcrumb-back, and direct URL loads.
+ *
+ * The L0 tier isn't a single kind — `GraphKind` has no `l0`; a composition is
+ * one of handler / toolpack / skillpack / cli_invocation. Group them all to
+ * the warm tint. A new composition kind must be added here to inherit it. */
+[data-graph-kind='l2'] {
+    --rf-canvas-bg: #e6e9ef;
+    --rf-grid: #9ba6b5;
+    --rf-vignette: rgba(40, 50, 70, 0.08);
+}
+
+[data-graph-kind='handler'],
+[data-graph-kind='toolpack'],
+[data-graph-kind='skillpack'],
+[data-graph-kind='cli_invocation'] {
+    --rf-canvas-bg: #ecdabb;
+    --rf-grid: #c69a63;
+    --rf-vignette: rgba(60, 38, 8, 0.2);
+}
+
+.dark [data-graph-kind='l2'] {
+    --rf-canvas-bg: #0f1217;
+    --rf-grid: #1e242b;
+    --rf-vignette: rgba(0, 0, 0, 0.24);
+}
+
+.dark [data-graph-kind='handler'],
+.dark [data-graph-kind='toolpack'],
+.dark [data-graph-kind='skillpack'],
+.dark [data-graph-kind='cli_invocation'] {
+    --rf-canvas-bg: #1a1409;
+    --rf-grid: #2c2410;
+    --rf-vignette: rgba(0, 0, 0, 0.4);
+}
+
+/* Warm-industrial vignette over the canvas. `pointer-events: none` is
+ * load-bearing — without it this layer would eat clicks. z-index sits
+ * above the SVG grid pattern but below React Flow nodes (5+). */
+.react-flow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 0%,
+        transparent 60%,
+        var(--rf-vignette) 100%
+    );
+}
+
+.dark .react-flow::after {
+    background: radial-gradient(
+        ellipse at center,
+        transparent 0%,
+        transparent 55%,
+        var(--rf-vignette) 100%
+    );
+}
+
+/* Strip React Flow's default node-type CSS — `output`/`input`/`default`/
+ * `group` ship pre-styled with a white background + dark border that leaks
+ * around our `.fab-node` inner shell. We always render the shell ourselves. */
+.react-flow__node {
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    color: inherit;
+}
+
+/* Edges: idle stroke + hover/selected affordance. The fat invisible
+ * `interactionWidth` is set per-edge in Canvas.tsx; these rules are the
+ * visible surface. Idle wires are solid + high-contrast so the wiring is
+ * always legible — Fabritorio's pitch is "you can see how it's built";
+ * subtle conduit dashes paid for that in readability. The active treatment
+ * (kind-aware color, glow, fast dash) does the heavy lifting for "data is
+ * flowing here right now." */
+.react-flow__edge-path {
+    stroke: #71717a;
+    stroke-width: 1.5;
+    transition:
+        stroke 120ms ease,
+        stroke-width 120ms ease;
+}
+
+.dark .react-flow__edge-path {
+    stroke: #a1a1aa;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+    stroke: #6366f1;
+    stroke-width: 2.25;
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path,
+.react-flow__edge:focus-visible .react-flow__edge-path {
+    stroke: #4f46e5;
+    stroke-width: 2.5;
+}
+
+.dark .react-flow__edge:hover .react-flow__edge-path {
+    stroke: #818cf8;
+}
+
+.dark .react-flow__edge.selected .react-flow__edge-path,
+.dark .react-flow__edge:focus .react-flow__edge-path,
+.dark .react-flow__edge:focus-visible .react-flow__edge-path {
+    stroke: #a5b4fc;
+}
+
+/* Active wires (source completed → target running). Thicker, brighter,
+ * faster dash flow, with a soft drop-shadow glow. The kind-suffix class
+ * picks the accent: emerald for Channel/Gateway sources (event/intake flow),
+ * orange for Tool/ToolPack sources (tool-call flow), indigo otherwise. */
+.fabritorio-active-edge .react-flow__edge-path {
+    stroke-width: 2.5;
+    stroke-dasharray: 6 4;
+    animation: fab-edge-flow 1.5s linear infinite;
+}
+
+.fabritorio-edge-kind-channel.fabritorio-active-edge .react-flow__edge-path {
+    stroke: #10b981;
+    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.55));
+}
+
+.dark .fabritorio-edge-kind-channel.fabritorio-active-edge .react-flow__edge-path {
+    stroke: #34d399;
+    filter: drop-shadow(0 0 5px rgba(52, 211, 153, 0.65));
+}
+
+.fabritorio-edge-kind-tool.fabritorio-active-edge .react-flow__edge-path {
+    stroke: #f97316;
+    filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.55));
+}
+
+.dark .fabritorio-edge-kind-tool.fabritorio-active-edge .react-flow__edge-path {
+    stroke: #fb923c;
+    filter: drop-shadow(0 0 5px rgba(251, 146, 60, 0.65));
+}
+
+.fabritorio-edge-kind-default.fabritorio-active-edge .react-flow__edge-path {
+    stroke: #6366f1;
+    filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.55));
+}
+
+.dark .fabritorio-edge-kind-default.fabritorio-active-edge .react-flow__edge-path {
+    stroke: #818cf8;
+    filter: drop-shadow(0 0 5px rgba(129, 140, 248, 0.65));
+}
+
+/* The active edge's faster dashed animation IS the particle pulse — a second
+ * SVG layer would need either an overlay path or a scheduler; per the Day 3
+ * non-goals both are deferred to the post-launch sprite work. */
+
+@keyframes fab-edge-flow {
+    from {
+        stroke-dashoffset: 0;
+    }
+    to {
+        stroke-dashoffset: -16;
+    }
+}
+
+/* Traveling packets (Phase 2b) — a discrete glowing dot the custom `fabritorio`
+ * edge injects on each `edge.traversed` and animates along the bezier via SVG
+ * <animateMotion>. The dot is purely additive on top of the edge styling above;
+ * it does not touch `.react-flow__edge-path`, so flow/ask animations are
+ * unaffected. Color comes off the event's `portHint` (Canvas-side → class). */
+.fabritorio-packet {
+    pointer-events: none;
+    /* `r` is set on the element; this is the fill + glow only. */
+}
+
+.fabritorio-packet--result {
+    fill: #10b981;
+    filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.85));
+}
+
+.dark .fabritorio-packet--result {
+    fill: #34d399;
+    filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9));
+}
+
+.fabritorio-packet--error {
+    fill: #f43f5e;
+    filter: drop-shadow(0 0 5px rgba(244, 63, 94, 0.85));
+}
+
+.dark .fabritorio-packet--error {
+    fill: #fb7185;
+    filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.9));
+}
+
+/* Marching-ants overlay for L2 agent edges while an outbound `ask_agent`
+ * is in flight. The class is added on top of any existing active-edge /
+ * kind-suffix styling, so the active-edge accent and the asking cue
+ * compose without conflict. A slower dash period than the active flow
+ * keeps the two cues visually distinguishable when both fire on the same
+ * wire (rare, but possible if the caller is also receiving an inbound
+ * event during the ask). */
+.fabritorio-asking-edge .react-flow__edge-path {
+    stroke: #a855f7;
+    stroke-width: 2.5;
+    stroke-dasharray: 8 5;
+    animation: fab-edge-ask 2s linear infinite;
+    filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.55));
+}
+
+.dark .fabritorio-asking-edge .react-flow__edge-path {
+    stroke: #c084fc;
+    filter: drop-shadow(0 0 5px rgba(192, 132, 252, 0.65));
+}
+
+@keyframes fab-edge-ask {
+    from {
+        stroke-dashoffset: 0;
+    }
+    to {
+        stroke-dashoffset: -26;
+    }
+}
+
+/* Asking chip on the L2 agent node card. Sits on the top-right corner,
+ * outside the header text flow so the existing state badge ("idle" /
+ * "running") stays unobscured. Color matches the marching-ants edge so
+ * the two cues read as the same in-flight ask. */
+.fab-asking-chip {
+    position: absolute;
+    top: -10px;
+    right: 8px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 9999px;
+    border: 1px solid rgba(168, 85, 247, 0.7);
+    background: rgba(245, 243, 255, 0.95);
+    color: #6b21a8;
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.2;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    white-space: nowrap;
+    pointer-events: auto;
+    /* Subtle pulse echoing the edge animation period so a sustained ask
+     * doesn't read as static. Half the period of the edge keyframe so
+     * the two read as coordinated, not strictly in lock-step. */
+    animation: fab-chip-pulse 2s ease-in-out infinite;
+}
+
+.dark .fab-asking-chip {
+    border-color: rgba(192, 132, 252, 0.7);
+    background: rgba(76, 29, 149, 0.55);
+    color: #f3e8ff;
+}
+
+@keyframes fab-chip-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.75;
+    }
+}
+
+/* Step 8 of the composite-by-value migration: ghost rendering for the
+ * parent NativeAgent's L2-side wiring inside the L1 canvas. The user can
+ * click a ghost to inspect its live state in the Inspector (read-only),
+ * but everything structural — drag, delete, wiring — is disabled at the
+ * React Flow layer. We dim the wrapper and override the inner border to
+ * dashed; the Inspector handles the read-only banner + disabled inputs. */
+.react-flow__node.fabritorio-ghost-node {
+    opacity: 0.7;
+}
+
+.react-flow__node.fabritorio-ghost-node > div {
+    border-style: dashed !important;
+}
+
+.react-flow__edge.fabritorio-ghost-edge .react-flow__edge-path {
+    stroke-dasharray: 4 4;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Node shell — chunky 3-section card + state affordances. */
+.fab-node {
+    position: relative;
+    border-width: 2px;
+    border-radius: 6px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 2px 6px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
+}
+
+.fab-node-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px 5px;
+    background: rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dark .fab-node-header {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.fab-node-body {
+    padding: 8px 12px;
+}
+
+.fab-node-footer {
+    padding: 4px 12px 6px;
+}
+
+.fab-state-running::before,
+.fab-state-waiting::before,
+.fab-state-error::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    pointer-events: none;
+}
+
+.fab-state-running::before {
+    background: #6366f1;
+    animation: fab-pulse-bar 1.2s ease-in-out infinite;
+}
+
+.fab-state-waiting::before {
+    background: #f59e0b;
+}
+
+.fab-state-error::before {
+    background: #f43f5e;
+}
+
+.fab-state-completed::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: #10b981;
+    pointer-events: none;
+    animation: fab-completed-fade 600ms ease-out forwards;
+}
+
+@keyframes fab-pulse-bar {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+}
+
+@keyframes fab-completed-fade {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/* ── Phase 3: chunk-driven stream glow ───────────────────────────────────────
+ *
+ * `useNodeLiveness` writes three custom props to the `.react-flow__node`
+ * wrapper of the *owning* node (the real Model/Handler/Tool when drilled in,
+ * the Agent stand-in at L2) on an rAF loop — never via setState:
+ *   --fab-stream-glow      0..1   bumped per `llm.chunk`, decays ~280ms half-life
+ *   --fab-stream-reasoning 0|1    1 = reasoning ("thinking") track, 0 = content
+ *   --fab-recent           0..1   phosphor; stamped to 1 on any activity (Phase 4)
+ *
+ * Custom props inherit, so the inner `.fab-node` shell reads them directly. The
+ * glow is a colored outer halo whose opacity tracks the value, so a steady
+ * token stream sits bright and a pause dims it — "throughput as light." The
+ * reasoning track shifts the hue toward violet and reads dimmer than content
+ * generation (indigo), distinguishing thinking from output at a glance. */
+.fab-node {
+    /* Defaults so a node with no liveness data is inert (zero halo/phosphor). */
+    --fab-stream-glow: 0;
+    --fab-stream-reasoning: 0;
+    --fab-recent: 0;
+    /* Phase 4 phosphor wake — a fading emerald tint along the bottom edge,
+     * distinct from the indigo/violet stream halo so a completed node reads as
+     * "this just finished" rather than "this is streaming." Composes over the
+     * per-kind Tailwind background-color. */
+    background-image: linear-gradient(
+        to top,
+        rgba(16, 185, 129, calc(0.18 * var(--fab-recent))),
+        transparent 40%
+    );
+}
+
+/* The glow halo lives on the React Flow node *wrapper*, not the `.fab-node`
+ * shell: the shell sets `overflow: hidden` (to clip its header/footer dividers),
+ * which would clip an outward box-shadow. The wrapper has no overflow clip and
+ * no box-shadow of its own, so it's the right surface for the halo. The custom
+ * props are set on this wrapper by `useNodeLiveness`, so they're read directly
+ * here (and inherit down to `.fab-node` for the phosphor gradient). */
+.react-flow__node::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: -1;
+    /* Hue: lerp indigo(99,102,241) → violet(167,139,250) by reasoning flag. */
+    box-shadow: 0 0 calc(6px + 14px * var(--fab-stream-glow, 0))
+        calc(1px + 4px * var(--fab-stream-glow, 0))
+        rgba(
+            calc(99 + (167 - 99) * var(--fab-stream-reasoning, 0)),
+            calc(102 + (139 - 102) * var(--fab-stream-reasoning, 0)),
+            calc(241 + (250 - 241) * var(--fab-stream-reasoning, 0)),
+            calc(0.55 * var(--fab-stream-glow, 0))
+        );
+    /* Opacity also folds in the slower phosphor (Phase 4) so the halo lingers
+     * after the glow has decayed — the warm "recently active" wake that turns a
+     * fast dispatch into a readable trail instead of a blink. `max()` keeps
+     * whichever signal is stronger this frame. The imperative rAF decay owns
+     * both values; CSS just maps them to opacity — no keyframe, no setState. */
+    opacity: max(var(--fab-stream-glow, 0), calc(0.45 * var(--fab-recent, 0)));
+}
+
+/* Selection ring — hue-free double ring on the wrapper. Coexists with the
+ * ::after stream-glow (hard ring = chosen, soft halo = alive). */
+.react-flow__node.selected {
+    box-shadow:
+        0 0 0 1.5px #ffffff,
+        0 0 0 3.5px rgba(15, 23, 42, 0.92);
+    border-radius: 6px;
+}
+.dark .react-flow__node.selected {
+    box-shadow:
+        0 0 0 1.5px rgba(15, 23, 42, 0.92),
+        0 0 0 3.5px rgba(255, 255, 255, 0.92);
+}
+.fab-has-multi-selection .react-flow__node:not(.selected) {
+    opacity: 0.45;
+    transition: opacity 150ms ease;
+}
+
+/* ── Phase 5+: model-router failover cascade ─────────────────────────────────
+ *
+ * Discrete, prop-driven (not rAF) affordances on a Model node's `.fab-node`
+ * shell while a ModelRouter cycles through its children. `fab-router-trying`
+ * gives a steady indigo ring to the Model currently being attempted;
+ * `fab-router-fell-through` flashes rose once when that Model failed and the
+ * router moved on. Both are additive classes layered over the per-kind/state
+ * border (decision #1) — they tweak only the ring/box-shadow, never the base
+ * border-color the steady-state running/error styling owns. */
+.fab-router-trying {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 0 0 2px rgba(99, 102, 241, 0.55),
+        0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+.fab-router-fell-through {
+    animation: fab-router-flash 900ms ease-out 1;
+}
+
+@keyframes fab-router-flash {
+    0% {
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 0 0 3px rgba(244, 63, 94, 0.7),
+            0 2px 10px rgba(244, 63, 94, 0.5);
+    }
+    100% {
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 0 0 0 rgba(244, 63, 94, 0);
+    }
+}
+
+/* Pipe-socket connection handles.
+ *
+ * React Flow ships handles as bare 6px dots — too small to aim at without
+ * zooming in, which was the user-facing complaint. We turn each handle into
+ * a full-height *grab rail* (24px wide, 12px outside the node + 12px inside,
+ * pointer-events: all) so the click target is the entire side of the node.
+ * The visible 11px ringed socket is rendered via ::before, anchored at the
+ * handle's geometric center — that center still sits at the node's edge
+ * (default Position.Left/Right positioning is untouched), so React Flow
+ * routes wires to the visible socket exactly as before. ::after paints the
+ * faint rail bar, revealed on node hover or while a connection is being
+ * dragged, so the user reads "you can grab anywhere along this side." */
+
+.react-flow__handle {
+    /* The full-height strip is the actual grab target. */
+    width: 24px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    pointer-events: all;
+    cursor: crosshair;
+    z-index: 6;
+}
+
+/* Visible socket — chunky ringed disc, painted in the canvas-bg color so it
+ * reads as a port carved into the node's border. Sits at the handle's
+ * geometric center (== node's edge midpoint). */
+.react-flow__handle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--rf-canvas-bg);
+    border: 2px solid #71717a;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.18);
+    transform: translate(-50%, -50%);
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        box-shadow 150ms ease,
+        transform 120ms ease;
+    pointer-events: none;
+}
+
+.dark .react-flow__handle::before {
+    border-color: #a1a1aa;
+}
+
+/* Edge rail — faint vertical bar inside the grab strip, hidden until the
+ * user signals intent (hovering the node, or actively dragging a wire). */
+.react-flow__handle::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 50%;
+    width: 3px;
+    border-radius: 2px;
+    background: #71717a;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition:
+        opacity 150ms ease,
+        background 150ms ease;
+    pointer-events: none;
+}
+
+.dark .react-flow__handle::after {
+    background: #a1a1aa;
+}
+
+.react-flow__node:hover .react-flow__handle::after,
+.react-flow__handle:hover::after {
+    opacity: 0.4;
+}
+
+/* Hover: socket grows, gains an indigo accent and a soft halo. Cursor is
+ * already crosshair from the base rule. */
+.react-flow__handle:hover::before {
+    background: #fff;
+    border-color: #6366f1;
+    box-shadow:
+        inset 0 1px 1px rgba(0, 0, 0, 0.1),
+        0 0 0 4px rgba(99, 102, 241, 0.2);
+    transform: translate(-50%, -50%) scale(1.22);
+}
+
+.dark .react-flow__handle:hover::before {
+    background: #1f1c17;
+    border-color: #818cf8;
+    box-shadow:
+        inset 0 1px 1px rgba(0, 0, 0, 0.4),
+        0 0 0 4px rgba(129, 140, 248, 0.26);
+}
+
+/* While dragging a wire, the *source* handle stays lit with an indigo pulse
+ * so the user can see where the connection originated. */
+.react-flow__handle.connectingfrom::before {
+    background: #6366f1;
+    border-color: #4f46e5;
+    box-shadow:
+        inset 0 1px 1px rgba(0, 0, 0, 0.1),
+        0 0 0 5px rgba(99, 102, 241, 0.28);
+    transform: translate(-50%, -50%) scale(1.18);
+    animation: fab-handle-pulse 1.1s ease-in-out infinite;
+}
+
+.dark .react-flow__handle.connectingfrom::before {
+    background: #818cf8;
+    border-color: #a5b4fc;
+}
+
+/* Actively hovered + valid: emerald accent, brighter halo, larger pulse.
+ * Reads as "drop here, this will work." */
+.react-flow__handle.connectingto.valid::before {
+    background: #ecfdf5;
+    border-color: #10b981;
+    box-shadow:
+        inset 0 1px 1px rgba(0, 0, 0, 0.1),
+        0 0 0 6px rgba(16, 185, 129, 0.3);
+    transform: translate(-50%, -50%) scale(1.28);
+    animation: fab-handle-pulse-emerald 0.9s ease-in-out infinite;
+}
+
+.dark .react-flow__handle.connectingto.valid::before {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: #34d399;
+    box-shadow:
+        inset 0 1px 1px rgba(0, 0, 0, 0.4),
+        0 0 0 6px rgba(52, 211, 153, 0.32);
+}
+
+.react-flow__handle.connectingto.valid::after {
+    opacity: 0.7;
+    background: #10b981;
+}
+
+.dark .react-flow__handle.connectingto.valid::after {
+    background: #34d399;
+}
+
+/* Actively hovered + invalid: rose accent, desaturated, no pulse. Reads as
+ * "you can't drop here." The handle still receives pointer events so the
+ * user gets to release without the wire snapping to a wrong port. */
+.react-flow__handle.connectingto:not(.valid)::before {
+    background: #fff1f2;
+    border-color: #f43f5e;
+    box-shadow:
+        inset 0 1px 1px rgba(0, 0, 0, 0.1),
+        0 0 0 4px rgba(244, 63, 94, 0.2);
+}
+
+.dark .react-flow__handle.connectingto:not(.valid)::before {
+    background: rgba(244, 63, 94, 0.18);
+    border-color: #fb7185;
+}
+
+@keyframes fab-handle-pulse {
+    0%,
+    100% {
+        box-shadow:
+            inset 0 1px 1px rgba(0, 0, 0, 0.1),
+            0 0 0 5px rgba(99, 102, 241, 0.28);
+    }
+    50% {
+        box-shadow:
+            inset 0 1px 1px rgba(0, 0, 0, 0.1),
+            0 0 0 9px rgba(99, 102, 241, 0.14);
+    }
+}
+
+@keyframes fab-handle-pulse-emerald {
+    0%,
+    100% {
+        box-shadow:
+            inset 0 1px 1px rgba(0, 0, 0, 0.1),
+            0 0 0 6px rgba(16, 185, 129, 0.3);
+    }
+    50% {
+        box-shadow:
+            inset 0 1px 1px rgba(0, 0, 0, 0.1),
+            0 0 0 11px rgba(16, 185, 129, 0.14);
+    }
+}
+
+/* Markdown rendering inside chat bubbles. Scoped to `.fab-md` so it can't
+ * leak into other surfaces. Code blocks always render on a dark background
+ * (github-dark.css theme) regardless of app theme — matches the convention
+ * in ChatGPT/Claude/etc. and keeps the highlight palette readable. */
+.fab-md > * + * {
+    margin-top: 0.5rem;
+}
+.fab-md p {
+    margin: 0;
+}
+.fab-md h1,
+.fab-md h2,
+.fab-md h3,
+.fab-md h4 {
+    font-weight: 600;
+    line-height: 1.25;
+}
+.fab-md h1 {
+    font-size: 1.15rem;
+}
+.fab-md h2 {
+    font-size: 1.05rem;
+}
+.fab-md h3 {
+    font-size: 0.95rem;
+}
+.fab-md h4 {
+    font-size: 0.875rem;
+}
+.fab-md ul,
+.fab-md ol {
+    padding-left: 1.25rem;
+    margin: 0;
+}
+.fab-md ul {
+    list-style: disc;
+}
+.fab-md ol {
+    list-style: decimal;
+}
+.fab-md li + li {
+    margin-top: 0.125rem;
+}
+.fab-md a {
+    color: #4f46e5;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.dark .fab-md a {
+    color: #a5b4fc;
+}
+.fab-md blockquote {
+    border-left: 3px solid #d4d4d8;
+    padding-left: 0.75rem;
+    color: #52525b;
+}
+.dark .fab-md blockquote {
+    border-left-color: #3f3f46;
+    color: #a1a1aa;
+}
+.fab-md hr {
+    border: 0;
+    border-top: 1px solid #e4e4e7;
+    margin: 0.75rem 0;
+}
+.dark .fab-md hr {
+    border-top-color: #27272a;
+}
+.fab-md table {
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+.fab-md th,
+.fab-md td {
+    border: 1px solid #e4e4e7;
+    padding: 0.25rem 0.5rem;
+    text-align: left;
+}
+.dark .fab-md th,
+.dark .fab-md td {
+    border-color: #27272a;
+}
+.fab-md th {
+    background: #f4f4f5;
+    font-weight: 600;
+}
+.dark .fab-md th {
+    background: #18181b;
+}
+/* Inline code — light pill, app-themed. */
+.fab-md :not(pre) > code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.dark .fab-md :not(pre) > code {
+    background: rgba(255, 255, 255, 0.08);
+}
+/* Fenced code blocks — always dark, matches github-dark.css. */
+.fab-md pre {
+    background: #0d1117;
+    color: #e6edf3;
+    border-radius: 6px;
+    padding: 0.65rem 0.85rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+.fab-md pre code {
+    background: transparent;
+    padding: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Ghost handles aren't connectable (React Flow's `connectable: false` on
+ * the node skips the indicator class) but the base styling still applies
+ * via ::before — dim it so ghosts read as informational. */
+.fabritorio-ghost-node .react-flow__handle {
+    pointer-events: none;
+    cursor: default;
+}
+
+.fabritorio-ghost-node .react-flow__handle::before {
+    opacity: 0.5;
+}
+
+.fabritorio-ghost-node .react-flow__handle::after {
+    display: none;
+}
+
+/* Phase 5.5 — optimistic-ghost states for in-flight ops. Distinct from the
+ * parent-context ghost above: those are *cross-graph* visualizations; these
+ * are *pending server confirmation*. The Canvas marks a node/edge as
+ * pending when an ops batch fires, settles it on a 200 response, or flips
+ * it to error on a 4xx/5xx. Visual language: pending is dimmed + subtly
+ * pulsing (Warcraft-style build-in cue), error is a brief red flash before
+ * the canvas removes the optimistic copy. */
+.react-flow__node.fabritorio-optimistic-pending-node {
+    opacity: 0.65;
+    animation: fab-optimistic-pulse 1.4s ease-in-out infinite;
+}
+
+.react-flow__node.fabritorio-optimistic-pending-node > div {
+    border-style: dashed !important;
+}
+
+.react-flow__node.fabritorio-optimistic-error-node {
+    animation: fab-optimistic-error-flash 0.45s ease-out 2;
+}
+
+.react-flow__node.fabritorio-optimistic-error-node > div {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+}
+
+.react-flow__edge.fabritorio-optimistic-pending-edge .react-flow__edge-path {
+    stroke-dasharray: 6 4;
+    opacity: 0.7;
+    animation: fab-edge-flow 1s linear infinite;
+}
+
+.react-flow__edge.fabritorio-optimistic-error-edge .react-flow__edge-path {
+    stroke: #ef4444 !important;
+    stroke-dasharray: 4 4;
+    opacity: 0.85;
+}
+
+@keyframes fab-optimistic-pulse {
+    0%,
+    100% {
+        opacity: 0.55;
+    }
+    50% {
+        opacity: 0.85;
+    }
+}
+
+@keyframes fab-optimistic-error-flash {
+    0% {
+        background-color: rgba(239, 68, 68, 0.18);
+    }
+    100% {
+        background-color: transparent;
+    }
+}

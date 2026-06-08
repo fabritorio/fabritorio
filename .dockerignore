@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/out
+dist-pkg
+.git
+.turbo
+.logs
+.playwright*
+docs_bak
+images
+.worktrees
+.DS_Store

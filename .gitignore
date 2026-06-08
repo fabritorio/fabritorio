@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Flattened publish package (scripts/build-package.mjs output)
+dist-pkg/
+
+# Turborepo
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Runtime data (future: ~/.harness/graphs lives in the user's home, but if ever colocated)
+.harness/
+# Ignore .claude/* but carve out skills/ — project skills are part of the codebase.
+.claude/*
+!.claude/skills/
+.playwright*
+
+# Local git worktrees
+.worktrees/

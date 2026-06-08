@@ -1,0 +1,20 @@
+services:
+    fabritorio:
+        build: .
+        image: fabritorio:sandbox
+        # Loopback-only on the host: the sandbox is reachable from this machine,
+        # not the LAN. For LAN access, change to "0.0.0.0:4000:4000" AND set
+        # FAB_ALLOWED_HOSTS (see security note).
+        ports:
+            - '127.0.0.1:4000:4000'
+        volumes:
+            - fabritorio-data:/data # token, secrets, conversations, tools, memory, graphs, Go caches
+        # HOST/PORT are baked into the image. For LAN access, uncomment and set
+        # FAB_ALLOWED_HOSTS (and widen the port map above to 0.0.0.0):
+        # environment:
+        #   FAB_ALLOWED_HOSTS: "host.example:4000"
+        # Do NOT mount /var/run/docker.sock — that's a sandbox escape.
+        restart: unless-stopped
+
+volumes:
+    fabritorio-data:

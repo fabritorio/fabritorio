@@ -1,0 +1,55 @@
+{
+    "name": "fabritorio",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Local-first visual environment for composing, running, and observing AI agents",
+    "license": "MIT",
+    "author": {
+        "name": "Eduard Likwong",
+        "url": "https://fabritorio.dev"
+    },
+    "scripts": {
+        "dev": "turbo run dev",
+        "dev:lan": "bash scripts/dev-lan.sh",
+        "dev:runner": "turbo run dev --filter @fabritorio/runner",
+        "dev:web": "turbo run dev --filter @fabritorio/web",
+        "dev:debug": "mkdir -p .logs && turbo run dev 2>&1 | tee .logs/dev.log",
+        "dev:debug:runner": "mkdir -p .logs && turbo run dev --filter @fabritorio/runner 2>&1 | tee .logs/runner.log",
+        "dev:debug:web": "mkdir -p .logs && turbo run dev --filter @fabritorio/web 2>&1 | tee .logs/web.log",
+        "build": "turbo run build",
+        "build:package": "node scripts/build-package.mjs",
+        "serve": "pnpm --filter @fabritorio/runner start",
+        "start": "pnpm build && pnpm --filter @fabritorio/runner start",
+        "typecheck": "turbo run typecheck",
+        "test": "turbo run test",
+        "test:runner": "pnpm --filter @fabritorio/runner test",
+        "test:web": "pnpm --filter @fabritorio/web test",
+        "test:seq": "turbo run test --concurrency=1 --output-logs=new-only",
+        "clean": "turbo run clean && rm -rf node_modules",
+        "fmt": "oxfmt --write",
+        "fmt:check": "oxfmt --check",
+        "lint": "oxlint",
+        "lint:fix": "oxlint --fix",
+        "prepare": "husky"
+    },
+    "devDependencies": {
+        "esbuild": "^0.28.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.4.0",
+        "oxfmt": "^0.47.0",
+        "oxlint": "^1.62.0",
+        "turbo": "^2.3.3",
+        "typescript": "^5.7.2"
+    },
+    "lint-staged": {
+        "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}": [
+            "oxfmt --write",
+            "oxlint --fix"
+        ],
+        "*.{json,jsonc,md}": "oxfmt --write"
+    },
+    "engines": {
+        "node": ">=24"
+    },
+    "packageManager": "pnpm@9.15.0"
+}

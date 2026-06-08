@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 224" width="256" height="224">
+  <defs>
+    <clipPath id="frontStack">
+      <path d="M120 198 L123 60 L147 60 L150 198 Z"/>
+    </clipPath>
+    <clipPath id="rightStack">
+      <path d="M190 168 L192 96 L210 96 L212 168 Z"/>
+    </clipPath>
+  </defs>
+
+  <g stroke="#3A474F" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- smoke (behind tower), billowing up and to the right -->
+    <path fill="#E7EBEE" d="M66 60 Q50 60 52 46 Q46 32 64 32 Q70 18 90 26
+      Q104 14 118 28 Q140 26 138 46 Q150 58 130 60 Q108 66 86 62 Q74 66 66 60 Z"/>
+
+    <!-- rust building -->
+    <path fill="#B3593E" d="M100 197 L100 150 L150 116 L186 150 L186 166 L216 166 L216 197 Z"/>
+
+    <!-- cooling tower body -->
+    <path fill="#C0AB8E" d="M48 78 C47 92 51 112 53 138 C52 150 50 165 44 197
+      L96 197 C90 165 88 150 87 138 C89 112 93 92 92 78 Z"/>
+    <!-- cooling tower cap -->
+    <rect fill="#8A8B85" x="41" y="64" width="54" height="15" rx="5"/>
+
+    <!-- front stack -->
+    <path fill="#3A474F" d="M120 198 L123 60 L147 60 L150 198 Z"/>
+    <g clip-path="url(#frontStack)" stroke="none">
+      <rect fill="#D26E3C" x="118" y="76" width="34" height="8"/>
+      <rect fill="#D26E3C" x="118" y="90" width="34" height="8"/>
+    </g>
+
+    <!-- right stack -->
+    <path fill="#3A474F" d="M190 168 L192 96 L210 96 L212 168 Z"/>
+    <g clip-path="url(#rightStack)" stroke="none">
+      <rect fill="#D26E3C" x="188" y="108" width="26" height="7"/>
+      <rect fill="#D26E3C" x="188" y="120" width="26" height="7"/>
+    </g>
+
+    <!-- ground -->
+    <path d="M30 199 H226" fill="none" stroke-width="9"/>
+
+  </g>
+</svg>
