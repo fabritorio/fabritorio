@@ -30,6 +30,29 @@ const WEB_FETCH_MAX_TIMEOUT_MS = 300_000;
 const MAX_OUTPUT_LINES = 500;
 const MAX_OUTPUT_BYTES = 32 * 1024;
 
+/**
+ * Undici sends no `User-Agent` and none of the `Accept*` / `Sec-Fetch-*` headers
+ * a real browser always carries, so a naive fetch trips the cheapest tier of
+ * bot-blocking (header sniffing) and 403s on a lot of sites. Presenting a
+ * desktop-browser header set clears that tier. It does NOT change our TLS/JA3
+ * fingerprint — JS challenges and fingerprint blocks still belong on heavier,
+ * userland network tools, not this pure-node floor.
+ */
+const DEFAULT_USER_AGENT =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+function browserHeaders(userAgent: string): Record<string, string> {
+    return {
+        'User-Agent': userAgent,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Upgrade-Insecure-Requests': '1',
+    };
+}
+
 /** Optional injection seams so unit tests stub the network + DNS. */
 export interface WebFetchToolDeps {
     /** Defaults to Node's global `fetch`. */
@@ -92,6 +115,14 @@ export const WEB_FETCH_SPEC: ToolSpec = {
             placeholder: 'e.g. article h2',
             description: 'Pin the soup selector.',
             showWhen: { field: 'mode', equals: 'soup' },
+        },
+        {
+            name: 'user_agent',
+            kind: 'string',
+            label: 'User-Agent',
+            placeholder: DEFAULT_USER_AGENT,
+            description:
+                'Override the User-Agent header sent with each request. Leave unset for a default desktop-browser UA.',
         },
     ],
 };
@@ -224,6 +255,12 @@ export function createWebFetchTool(
     }
     parameters.required = required;
 
+    const userAgent =
+        typeof config?.user_agent === 'string' && config.user_agent.trim().length > 0
+            ? config.user_agent
+            : DEFAULT_USER_AGENT;
+    const requestHeaders = browserHeaders(userAgent);
+
     const fetchFn = deps.fetchFn ?? fetch;
     const lookupFn = deps.lookupFn ?? defaultLookup;
 
@@ -286,6 +323,7 @@ export function createWebFetchTool(
                 res = await fetchFn(parsed.toString(), {
                     signal: controller.signal,
                     redirect: 'follow',
+                    headers: requestHeaders,
                 });
             } catch (err) {
                 const stoppedByUser = ctx?.signal?.aborted ?? false;
