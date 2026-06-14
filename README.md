@@ -79,6 +79,8 @@ Checkout [`CONTRIBUTING`](./CONTRIBUTING.md)
 
 Early and solo-built, local-first, single-user, no hosted dependency. Issues and ideas welcome.
 
+[Checkout the build log at fabritorio.dev/blog](https://fabritorio.dev/blog/) as I document my dogfooding and iterations of the project.
+
 **No warranty.** Fabritorio is provided **as is**, with no support guarantee and no commitment to ongoing maintenance; the author accepts no liability for its use. Run it at your own risk — and that risk is worth naming: it executes model-driven tools, code, and shell commands on your machine, and can make outbound network calls. Run it only somewhere you're willing to expose to that, and review what your agents are wired to do.
 
 Licensed under MIT — see [`LICENSE`](./LICENSE). Take it, fork it, build on it.
