@@ -330,8 +330,65 @@ describe('createWebFetchTool — schema shaping (the pin)', () => {
     });
 
     it('WEB_FETCH_SPEC advertises the config_schema for the inspector', () => {
-        expect(WEB_FETCH_SPEC.config_schema?.map((f) => f.name)).toEqual(['mode', 'selector']);
+        expect(WEB_FETCH_SPEC.config_schema?.map((f) => f.name)).toEqual([
+            'mode',
+            'selector',
+            'user_agent',
+        ]);
         const selectorField = WEB_FETCH_SPEC.config_schema?.find((f) => f.name === 'selector');
         expect(selectorField?.showWhen).toEqual({ field: 'mode', equals: 'soup' });
+    });
+});
+
+describe('createWebFetchTool — request headers', () => {
+    /** Stub that records the init passed to the most recent fetch call. */
+    function capturingFetch(): { fetchFn: typeof fetch; lastInit(): RequestInit | undefined } {
+        let init: RequestInit | undefined;
+        const fetchFn = (async (_input: RequestInfo | URL, opts?: RequestInit) => {
+            init = opts;
+            return {
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                url: 'https://example.com',
+                headers: new Headers(),
+                text: async () => 'ok',
+            } as unknown as Response;
+        }) as unknown as typeof fetch;
+        return { fetchFn, lastInit: () => init };
+    }
+
+    function headersOf(init: RequestInit | undefined): Record<string, string> {
+        return (init?.headers ?? {}) as Record<string, string>;
+    }
+
+    it('sends a desktop-browser header set by default', async () => {
+        const cap = capturingFetch();
+        const tool = createWebFetchTool(undefined, deps({ fetchFn: cap.fetchFn }));
+        const r = await tool.handler({ url: 'https://example.com', mode: 'raw' }, CTX);
+        expect(r.exit_code).toBe(0);
+        const h = headersOf(cap.lastInit());
+        expect(h['User-Agent']).toMatch(/Mozilla\/5\.0.*Chrome/);
+        expect(h.Accept).toMatch(/text\/html/);
+        expect(h['Accept-Language']).toMatch(/en-US/);
+        expect(h['Sec-Fetch-Mode']).toBe('navigate');
+    });
+
+    it('honors a pinned user_agent override', async () => {
+        const cap = capturingFetch();
+        const tool = createWebFetchTool(
+            { user_agent: 'MyBot/1.0' },
+            deps({ fetchFn: cap.fetchFn }),
+        );
+        const r = await tool.handler({ url: 'https://example.com', mode: 'raw' }, CTX);
+        expect(r.exit_code).toBe(0);
+        expect(headersOf(cap.lastInit())['User-Agent']).toBe('MyBot/1.0');
+    });
+
+    it('ignores a blank user_agent and keeps the default', async () => {
+        const cap = capturingFetch();
+        const tool = createWebFetchTool({ user_agent: '   ' }, deps({ fetchFn: cap.fetchFn }));
+        await tool.handler({ url: 'https://example.com', mode: 'raw' }, CTX);
+        expect(headersOf(cap.lastInit())['User-Agent']).toMatch(/Mozilla\/5\.0.*Chrome/);
     });
 });
