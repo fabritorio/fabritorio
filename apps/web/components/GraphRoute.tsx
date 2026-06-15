@@ -12,9 +12,8 @@ import { parseLocationToDrillState } from '@/lib/breadcrumb-stack';
 
 type Resolved = { state: 'loading' } | { state: 'found'; graph: Graph } | { state: 'missing' };
 
-// The packaged build is a static export whose only prerendered route is the `_`
-// placeholder (see apps/web/app/graphs/[id]/page.tsx + next.config.ts), so the
-// real graph id never arrives via `idProp` — it lives in the committed URL.
+// Static export: `_` is the only prerendered route, so the real id never
+// arrives via `idProp` — it lives in the committed URL.
 const PLACEHOLDER_ID = '_';
 
 export function GraphRoute({ id: idProp }: { id: string }) {
@@ -22,8 +21,6 @@ export function GraphRoute({ id: idProp }: { id: string }) {
     const router = useRouter();
     const pathname = usePathname();
 
-    // Read the real id from the committed URL, falling back to the `_`
-    // placeholder when it isn't resolvable yet.
     const readId = useCallback((): string => {
         if (typeof window === 'undefined') return idProp;
         const { currentGraphId } = parseLocationToDrillState(
@@ -33,11 +30,10 @@ export function GraphRoute({ id: idProp }: { id: string }) {
         return currentGraphId ?? idProp;
     }, [idProp]);
 
-    // On a soft navigation Next renders this component *before* it commits the
-    // new URL to the History API, so an eager read can still see the previous
-    // path and land on the `_` placeholder. Heal once `pathname` reports the
-    // commit. We only update while still on the placeholder — once a real id is
-    // captured, popstate/drill navigation is owned by the store, not this read.
+    // A soft navigation renders this component before Next commits the new URL,
+    // so the eager read can land on the placeholder; heal once `pathname` reports
+    // the commit. Only while still on the placeholder — afterwards popstate/drill
+    // is owned by the store, not this read.
     const [graphId, setGraphId] = useState<string>(readId);
     useEffect(() => {
         if (graphId !== PLACEHOLDER_ID) return;
@@ -64,8 +60,7 @@ export function GraphRoute({ id: idProp }: { id: string }) {
     const hasStaleGraph = useFabritorioStore((s) => s.graph.nodes.length > 0);
 
     useEffect(() => {
-        // Still waiting on the committed URL — never fetch `/graphs/_`; just hold
-        // the loading state until the heal effect above swaps in the real id.
+        // Don't fetch the placeholder; hold loading until the real id resolves.
         if (graphId === PLACEHOLDER_ID) {
             setResolved({ state: 'loading' });
             return;
