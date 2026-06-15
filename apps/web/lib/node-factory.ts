@@ -72,6 +72,7 @@ export type L2PaletteKind =
     | 'channel'
     | 'trigger'
     | 'schedule'
+    | 'manual'
     | 'native_agent'
     | 'cli_agent'
     | 'pi_agent'
@@ -102,6 +103,7 @@ const PREFIX: Record<PaletteKind, string> = {
     channel: 'channel',
     trigger: 'trigger',
     schedule: 'schedule',
+    manual: 'manual',
     native_agent: 'agent',
     cli_agent: 'cli',
     pi_agent: 'pi',
@@ -166,6 +168,7 @@ export const L2_PALETTE_KINDS: ReadonlySet<L2PaletteKind> = new Set<L2PaletteKin
     'channel',
     'trigger',
     'schedule',
+    'manual',
     'native_agent',
     'cli_agent',
     'pi_agent',
@@ -304,6 +307,16 @@ export function buildNode(kind: PaletteKind, position: Position): Node {
                 position,
                 trigger_kind: 'schedule',
                 recurrence: { kind: 'interval', every: 'PT15M' },
+            };
+            return node;
+        }
+        case 'manual': {
+            const node: TriggerNode = {
+                id,
+                type: 'trigger',
+                position,
+                trigger_kind: 'manual',
+                instructions: 'Describe what the agent should do when fired',
             };
             return node;
         }

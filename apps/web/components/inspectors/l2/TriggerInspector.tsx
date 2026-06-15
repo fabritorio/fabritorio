@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import type { Node, ScheduleRecurrence, TriggerNode } from '@fabritorio/types';
+import type { RunnerClient } from '@/lib/runner-client';
 import { Label, Input, TextArea, HeaderRow } from '../shared';
+
+/** A manual trigger can fire by hand only when it is not paused. */
+export function canFireTrigger(node: Pick<TriggerNode, 'trigger_kind' | 'paused'>): boolean {
+    return node.trigger_kind === 'manual' && node.paused !== true;
+}
 
 function isoToLocalInput(iso: string): string {
     if (!iso) return '';
@@ -45,11 +51,38 @@ export function TriggerInspector({
     node,
     onChange,
     onOpenRuns,
+    client,
+    currentGraphId,
 }: {
     node: TriggerNode;
     onChange: (id: string, patch: Partial<Node>) => void;
     onOpenRuns?: (nodeId: string) => void;
+    client?: RunnerClient;
+    currentGraphId?: string | null;
 }) {
+    const [firing, setFiring] = useState(false);
+    const [firedEventId, setFiredEventId] = useState<string | null>(null);
+    const [fireError, setFireError] = useState<string | null>(null);
+
+    const canFire = canFireTrigger(node);
+
+    const onFire = async () => {
+        if (!client || !currentGraphId) return;
+        setFiring(true);
+        setFiredEventId(null);
+        setFireError(null);
+        try {
+            const res = await client.fireTrigger(currentGraphId, node.id, {
+                message: node.instructions,
+            });
+            setFiredEventId(res.eventId);
+        } catch (err) {
+            setFireError(err instanceof Error ? err.message : String(err));
+        } finally {
+            setFiring(false);
+        }
+    };
+
     return (
         <div className="space-y-3">
             <HeaderRow label="Trigger" id={node.id} />
@@ -87,6 +120,7 @@ export function TriggerInspector({
                 >
                     <option value="cron">cron</option>
                     <option value="schedule">schedule</option>
+                    <option value="manual">manual</option>
                 </select>
             </div>
             {node.trigger_kind === 'cron' && (
@@ -126,6 +160,26 @@ export function TriggerInspector({
             <p className="text-[10px] text-zinc-500 dark:text-zinc-500">
                 Instructions are the per-fire user message sent to the wired agent.
             </p>
+            {node.trigger_kind === 'manual' && (
+                <div className="space-y-1">
+                    <button
+                        type="button"
+                        disabled={!canFire || firing || !client || !currentGraphId}
+                        onClick={() => void onFire()}
+                        className="w-full rounded-md bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {firing ? 'Firing…' : 'Fire'}
+                    </button>
+                    {firedEventId && (
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                            Fired · {firedEventId}
+                        </p>
+                    )}
+                    {fireError && (
+                        <p className="text-[10px] text-rose-600 dark:text-rose-400">{fireError}</p>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

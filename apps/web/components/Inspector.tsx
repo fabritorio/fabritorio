@@ -267,7 +267,13 @@ function NodeEditor({
             return <ChannelInspector node={node} onChange={onChange} />;
         case 'trigger':
             return (
-                <TriggerInspector node={node} onChange={onChange} onOpenRuns={onOpenTriggerRuns} />
+                <TriggerInspector
+                    node={node}
+                    onChange={onChange}
+                    onOpenRuns={onOpenTriggerRuns}
+                    client={client}
+                    currentGraphId={currentGraphId}
+                />
             );
         case 'native_agent':
             return (

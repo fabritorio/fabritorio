@@ -66,7 +66,12 @@ export function TriggerNode({ data }: Props) {
         }
     })();
     const paused = data.paused === true;
-    const footer = kind === 'cron' || kind === 'schedule' ? 'fires on schedule' : 'runtime pending';
+    const footer =
+        kind === 'cron' || kind === 'schedule'
+            ? 'fires on schedule'
+            : kind === 'manual'
+              ? 'fires on demand'
+              : 'runtime pending';
     return (
         <div
             className={`min-w-[200px] ${nodeStateClassName('trigger', state)}${paused ? ' opacity-50' : ''}`}

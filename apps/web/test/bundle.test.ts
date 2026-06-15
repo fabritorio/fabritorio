@@ -168,6 +168,9 @@ function buildStubClient(seed: Graph[] = []) {
         async triggerRun() {
             throw new Error('unused');
         },
+        async fireTrigger() {
+            throw new Error('unused');
+        },
         async agentCalls() {
             throw new Error('unused');
         },
