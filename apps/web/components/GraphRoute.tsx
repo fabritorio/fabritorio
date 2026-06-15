@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import type { Graph } from '@fabritorio/types';
 import { Playground } from './Playground';
 import { createRunnerClient } from '@/lib/runner-client';
@@ -12,18 +12,34 @@ import { parseLocationToDrillState } from '@/lib/breadcrumb-stack';
 
 type Resolved = { state: 'loading' } | { state: 'found'; graph: Graph } | { state: 'missing' };
 
+// Static export: `_` is the only prerendered route, so the real id never
+// arrives via `idProp` — it lives in the committed URL.
+const PLACEHOLDER_ID = '_';
+
 export function GraphRoute({ id: idProp }: { id: string }) {
     const client = useMemo(() => createRunnerClient(), []);
     const router = useRouter();
+    const pathname = usePathname();
 
-    const [initialId] = useState<string>(() => {
+    const readId = useCallback((): string => {
         if (typeof window === 'undefined') return idProp;
         const { currentGraphId } = parseLocationToDrillState(
             window.location.pathname,
             window.location.search,
         );
         return currentGraphId ?? idProp;
-    });
+    }, [idProp]);
+
+    // A soft navigation renders this component before Next commits the new URL,
+    // so the eager read can land on the placeholder; heal once `pathname` reports
+    // the commit. Only while still on the placeholder — afterwards popstate/drill
+    // is owned by the store, not this read.
+    const [graphId, setGraphId] = useState<string>(readId);
+    useEffect(() => {
+        if (graphId !== PLACEHOLDER_ID) return;
+        const id = readId();
+        if (id !== PLACEHOLDER_ID) setGraphId(id);
+    }, [pathname, readId, graphId]);
 
     const seeded = useRef(false);
     if (!seeded.current && typeof window !== 'undefined') {
@@ -44,6 +60,11 @@ export function GraphRoute({ id: idProp }: { id: string }) {
     const hasStaleGraph = useFabritorioStore((s) => s.graph.nodes.length > 0);
 
     useEffect(() => {
+        // Don't fetch the placeholder; hold loading until the real id resolves.
+        if (graphId === PLACEHOLDER_ID) {
+            setResolved({ state: 'loading' });
+            return;
+        }
         let cancelled = false;
         setResolved({ state: 'loading' });
         void loadPalette().catch(() => {
@@ -51,7 +72,7 @@ export function GraphRoute({ id: idProp }: { id: string }) {
         });
         void (async () => {
             try {
-                const summary = await client.getGraph(initialId);
+                const summary = await client.getGraph(graphId);
                 if (cancelled) return;
                 if (summary) {
                     setResolved({ state: 'found', graph: summary.graph });
@@ -65,12 +86,13 @@ export function GraphRoute({ id: idProp }: { id: string }) {
         return () => {
             cancelled = true;
         };
-    }, [client, initialId]);
+    }, [client, graphId]);
 
     if (resolved.state === 'loading' && !hasStaleGraph) {
         return (
             <div className="flex h-screen w-screen items-center justify-center bg-zinc-50 text-sm text-zinc-500 dark:bg-zinc-950 dark:text-zinc-400">
-                Loading graph {mounted ? `${initialId.slice(0, 8)}…` : '…'}
+                Loading graph{' '}
+                {mounted && graphId !== PLACEHOLDER_ID ? `${graphId.slice(0, 8)}…` : '…'}
             </div>
         );
     }
@@ -78,7 +100,7 @@ export function GraphRoute({ id: idProp }: { id: string }) {
         return (
             <div className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-zinc-50 text-zinc-700 dark:bg-zinc-950 dark:text-zinc-200">
                 <p className="text-sm">
-                    No graph with id <code className="font-mono">{initialId}</code>.
+                    No graph with id <code className="font-mono">{graphId}</code>.
                 </p>
                 <button
                     type="button"
@@ -90,5 +112,5 @@ export function GraphRoute({ id: idProp }: { id: string }) {
             </div>
         );
     }
-    return <Playground graphId={initialId} />;
+    return <Playground graphId={graphId} />;
 }
