@@ -1,4 +1,4 @@
-import type { TriggerNode } from '@fabritorio/types';
+import type { DispatchEvent, TriggerNode } from '@fabritorio/types';
 
 export interface TriggerFireCtx {
     message?: string;
@@ -6,7 +6,12 @@ export interface TriggerFireCtx {
     source?: string;
 }
 
-export type TriggerFire = (ctx?: TriggerFireCtx) => Promise<void>;
+/**
+ * Fires the trigger, emitting and fanning out a {@link DispatchEvent}. Returns the
+ * event that was dispatched, or `null` when the fire was a no-op (empty content — no
+ * per-fire message and no `instructions` to fall back on).
+ */
+export type TriggerFire = (ctx?: TriggerFireCtx) => Promise<DispatchEvent | null>;
 
 export interface TriggerStrategyInput {
     node: TriggerNode;

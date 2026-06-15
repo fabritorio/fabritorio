@@ -59,6 +59,11 @@ import {
     type Scheduler,
 } from './runtime/triggers/cron.js';
 import { createScheduleStrategyFactory } from './runtime/triggers/schedule.js';
+import {
+    createManualTriggerRegistry,
+    type ManualTriggerRegistry,
+} from './runtime/triggers/manual-registry.js';
+import { createManualStrategyFactory } from './runtime/triggers/manual.js';
 import type { CliExecutor } from './runtime/cli-executor.js';
 import { createDefaultToolRegistry, type ToolRegistry } from './runtime/tools.js';
 import { createRuntimeToolRegistry, type RuntimeToolRegistry } from './runtime/runtime-tools.js';
@@ -119,6 +124,7 @@ export interface ServerOptions {
     secretsStore?: SecretsStore;
     handlerRegistry?: HandlerRegistry;
     triggerStrategies?: TriggerStrategyRegistry;
+    manualTriggers?: ManualTriggerRegistry;
     cronScheduler?: Scheduler;
     intervalScheduler?: IntervalScheduler;
     modelClientFor?: (node: ModelNode) => ModelClient;
@@ -133,10 +139,12 @@ export interface ServerOptions {
 function createDefaultTriggerStrategies(
     scheduler: Scheduler,
     intervalScheduler: IntervalScheduler,
+    manualTriggers: ManualTriggerRegistry,
 ): TriggerStrategyRegistry {
     const reg = createTriggerStrategyRegistry();
     reg.register('cron', createCronStrategyFactory({ scheduler }));
     reg.register('schedule', createScheduleStrategyFactory({ scheduler, intervalScheduler }));
+    reg.register('manual', createManualStrategyFactory({ registry: manualTriggers }));
     return reg;
 }
 
@@ -246,11 +254,13 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
     const dispatchAborts = opts.dispatchAborts ?? createDispatchAbortRegistry();
     const modelClientFor = opts.modelClientFor ?? defaultModelClientFor;
     const handlerRegistry = opts.handlerRegistry ?? createDefaultHandlerRegistry();
+    const manualTriggers = opts.manualTriggers ?? createManualTriggerRegistry();
     const triggerStrategies =
         opts.triggerStrategies ??
         createDefaultTriggerStrategies(
             opts.cronScheduler ?? createCronerScheduler(),
             opts.intervalScheduler ?? createIntervalScheduler(),
+            manualTriggers,
         );
     let runtimesValue: GraphRuntimeRegistry | undefined;
     const runtimesRef = () => runtimesValue;
@@ -362,7 +372,7 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
             api.get('/bootstrap', async () => ({ token, version: pkg.version }));
             registerGraphRoutes(api, { graphStore, runtimes, conversationLabels });
             registerChannelRoutes(api, { channels, bus, runtimes });
-            registerTriggerRoutes(api, { runtimes, bus });
+            registerTriggerRoutes(api, { runtimes, bus, manualTriggers });
             registerAgentRoutes(api, {
                 runtimes,
                 bus,
