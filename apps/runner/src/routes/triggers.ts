@@ -158,8 +158,12 @@ export function registerTriggerRoutes(app: FastifyInstance, deps: TriggerRoutesD
             const body = (req.body ?? {}) as FireBody;
             const message = typeof body.message === 'string' ? body.message : undefined;
 
+            // Dispatch under the canonical `trigger:<nodeId>` source so the fired run
+            // shows up in the trigger's run history (the /runs query keys off it), exactly
+            // like cron/schedule do. Manual provenance is carried in meta, not the source.
             const event = await trigger.fire({
-                source: `manual:${nodeId}`,
+                source: `trigger:${nodeId}`,
+                meta: { firedVia: 'manual' },
                 ...(message !== undefined ? { message } : {}),
             });
             if (!event) {

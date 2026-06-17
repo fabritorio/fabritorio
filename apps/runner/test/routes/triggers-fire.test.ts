@@ -123,13 +123,36 @@ describe('POST /triggers/:graphId/:nodeId/fire', () => {
             });
             expect(res.statusCode).toBe(202);
             const body = res.json() as { eventId: string; source: string; timestamp: number };
-            expect(body.source).toBe(`manual:${TRIGGER_ID}`);
+            expect(body.source).toBe(`trigger:${TRIGGER_ID}`);
             expect(typeof body.eventId).toBe('string');
 
             await new Promise((r) => setImmediate(r));
             expect(boot.inbox).toHaveLength(1);
             expect(boot.inbox[0]!.eventId).toBe(body.eventId);
             expect(boot.inbox[0]!.messages).toEqual([{ role: 'user', content: 'run the report' }]);
+        } finally {
+            await boot.cleanup();
+        }
+    });
+
+    it('a fired run shows up in the trigger run history (/runs)', async () => {
+        const boot = await bootWithManualTrigger(dir, { instructions: 'run the report' });
+        try {
+            const fire = await inject(boot.app, {
+                method: 'POST',
+                url: `/api/triggers/${boot.graphId}/${TRIGGER_ID}/fire`,
+            });
+            expect(fire.statusCode).toBe(202);
+            const { eventId } = fire.json() as { eventId: string };
+
+            const runs = await inject(boot.app, {
+                method: 'GET',
+                url: `/api/triggers/${boot.graphId}/${TRIGGER_ID}/runs`,
+            });
+            expect(runs.statusCode).toBe(200);
+            const body = runs.json() as { source: string; runs: { eventId: string }[] };
+            expect(body.source).toBe(`trigger:${TRIGGER_ID}`);
+            expect(body.runs.map((r) => r.eventId)).toContain(eventId);
         } finally {
             await boot.cleanup();
         }
