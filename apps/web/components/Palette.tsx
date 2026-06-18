@@ -205,6 +205,11 @@ const L2_ITEMS: Array<Item & { kind: L2PaletteKind }> = [
         hint: 'time-based source · once / recurring',
     },
     {
+        kind: 'manual',
+        label: 'Manual',
+        hint: 'fire by hand · prompt sent on each fire',
+    },
+    {
         kind: 'native_agent',
         label: 'Native Agent',
         hint: 'wraps a saved L1 sub-graph',

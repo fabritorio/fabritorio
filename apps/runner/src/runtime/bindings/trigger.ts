@@ -31,7 +31,7 @@ export function createTriggerBinding(deps: TriggerBindingDeps): NodeBinding {
                         ? fireCtx.message
                         : (node.instructions ?? '');
                 if (content.length === 0) {
-                    return;
+                    return null;
                 }
                 const event = newDispatch({
                     source: fireCtx?.source ?? `trigger:${node.id}`,
@@ -45,6 +45,7 @@ export function createTriggerBinding(deps: TriggerBindingDeps): NodeBinding {
                         return ctx.bus.publish(ctx.topicFor(edge), event);
                     }),
                 );
+                return event;
             };
 
             const strategy = factory({ node, nodeId: node.id, fire });

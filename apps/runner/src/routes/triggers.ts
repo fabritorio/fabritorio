@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { DispatchEvent, ObservabilityEvent } from '@fabritorio/types';
 import type { EventBus } from '../runtime/event-bus.js';
 import type { GraphRuntimeRegistry } from '../runtime/graph-runtime.js';
+import type { ManualTriggerRegistry } from '../runtime/triggers/manual-registry.js';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -9,11 +10,16 @@ const MAX_LIMIT = 200;
 export interface TriggerRoutesDeps {
     runtimes: GraphRuntimeRegistry;
     bus: EventBus;
+    manualTriggers: ManualTriggerRegistry;
 }
 
 interface RunsParams {
     graphId: string;
     nodeId: string;
+}
+
+interface FireBody {
+    message?: unknown;
 }
 
 interface RunsQuery {
@@ -128,6 +134,46 @@ export function registerTriggerRoutes(app: FastifyInstance, deps: TriggerRoutesD
             }
 
             return reply.send({ events: deps.bus.eventsByDispatch(req.params.eventId) });
+        },
+    );
+
+    app.post<{ Params: RunsParams; Body: FireBody }>(
+        '/triggers/:graphId/:nodeId/fire',
+        async (req, reply) => {
+            const { graphId, nodeId } = req.params;
+            const loaded = deps.runtimes.get(graphId);
+            if (!loaded) {
+                return reply.code(404).send({ error: 'graph not loaded' });
+            }
+            const node = loaded.graph.nodes.find((n) => n.id === nodeId);
+            if (!node || node.type !== 'trigger') {
+                return reply.code(404).send({ error: 'trigger node not found' });
+            }
+
+            const trigger = deps.manualTriggers.get(nodeId);
+            if (!trigger) {
+                return reply.code(404).send({ error: 'trigger not loaded' });
+            }
+
+            const body = (req.body ?? {}) as FireBody;
+            const message = typeof body.message === 'string' ? body.message : undefined;
+
+            // Dispatch under the canonical `trigger:<nodeId>` source so the fired run
+            // shows up in the trigger's run history (the /runs query keys off it), exactly
+            // like cron/schedule do. Manual provenance is carried in meta, not the source.
+            const event = await trigger.fire({
+                source: `trigger:${nodeId}`,
+                meta: { firedVia: 'manual' },
+                ...(message !== undefined ? { message } : {}),
+            });
+            if (!event) {
+                return reply.code(400).send({ error: 'content required' });
+            }
+            return reply.code(202).send({
+                eventId: event.eventId,
+                source: event.source,
+                timestamp: event.timestamp,
+            });
         },
     );
 }

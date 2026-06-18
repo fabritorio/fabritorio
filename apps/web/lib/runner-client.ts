@@ -78,6 +78,12 @@ export interface TriggerRunDetail {
     events: Array<DispatchEvent | ObservabilityEvent>;
 }
 
+export interface FireTriggerResult {
+    eventId: string;
+    source: string;
+    timestamp: number;
+}
+
 export interface AgentCallsResult {
     callerNodeId: string;
     calls: AskCallSummary[];
@@ -390,6 +396,11 @@ export interface RunnerClient {
         opts?: { before?: string; limit?: number },
     ): Promise<TriggerRunsResult>;
     triggerRun(graphId: string, nodeId: string, eventId: string): Promise<TriggerRunDetail>;
+    fireTrigger(
+        graphId: string,
+        nodeId: string,
+        opts?: { message?: string },
+    ): Promise<FireTriggerResult>;
     agentCalls(
         graphId: string,
         nodeId: string,
@@ -1014,6 +1025,17 @@ export function createRunnerClient(baseUrl = getDefaultBaseUrl()): RunnerClient 
         async triggerRun(graphId, nodeId, eventId) {
             return requestJson<TriggerRunDetail>(
                 `${baseUrl}/triggers/${encodeURIComponent(graphId)}/${encodeURIComponent(nodeId)}/runs/${encodeURIComponent(eventId)}`,
+            );
+        },
+        async fireTrigger(graphId, nodeId, opts) {
+            return requestJson<FireTriggerResult>(
+                `${baseUrl}/triggers/${encodeURIComponent(graphId)}/${encodeURIComponent(nodeId)}/fire`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify(
+                        typeof opts?.message === 'string' ? { message: opts.message } : {},
+                    ),
+                },
             );
         },
         async agentCalls(graphId, nodeId, opts) {

@@ -87,6 +87,19 @@ describe('buildNode', () => {
         expect(n.recurrence).toEqual({ kind: 'interval', every: 'PT15M' });
     });
 
+    it('creates an L2 manual trigger with placeholder instructions and no schedule fields', () => {
+        const n = buildNode('manual', { x: 0, y: 0 });
+        expect(n.type).toBe('trigger');
+        if (n.type !== 'trigger') throw new Error('unreachable');
+        expect(n.trigger_kind).toBe('manual');
+        expect(n.id).toMatch(/^manual-/);
+        expect(typeof n.instructions).toBe('string');
+        expect(n.instructions?.length).toBeGreaterThan(0);
+        expect(n.expression).toBeUndefined();
+        expect(n.recurrence).toBeUndefined();
+        expect(n.at).toBeUndefined();
+    });
+
     it('creates a bare native_agent with empty l1_graph_id', () => {
         const n = buildNode('native_agent', { x: 0, y: 0 });
         if (n.type !== 'native_agent') throw new Error('unreachable');

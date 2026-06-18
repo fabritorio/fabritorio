@@ -27,7 +27,7 @@ export type Kind =
     | 'checkpoint'
     | 'secrets';
 
-export type ColorKind = Kind | 'schedule' | 'skill_pack';
+export type ColorKind = Kind | 'schedule' | 'manual' | 'skill_pack';
 
 export type Surface = 'node' | 'palette';
 type Step = 1 | 2 | 3;
@@ -198,6 +198,7 @@ const KIND: Record<ColorKind, { family: keyof typeof FAMILY_HUE; step: Step }> =
     checkpoint: { family: 'control', step: 2 },
     trigger: { family: 'trigger', step: 1 },
     schedule: { family: 'trigger', step: 2 },
+    manual: { family: 'trigger', step: 2 },
     debug_gateway: { family: 'debug', step: 1 },
     debug_probe: { family: 'debug', step: 2 },
     workspace: { family: 'workspace', step: 1 },
