@@ -12,7 +12,6 @@ import { registerTriggerRoutes } from './routes/triggers.js';
 import { registerAgentRoutes } from './routes/agents.js';
 import { registerDispatchesRoutes } from './routes/dispatches.js';
 import { registerObservabilityRoutes } from './routes/observability.js';
-import { registerAnimationRoutes } from './routes/animation.js';
 import { registerStreamRoutes } from './routes/stream.js';
 import { registerMemoryRoutes } from './routes/memory.js';
 import { registerToolRoutes } from './routes/tools.js';
@@ -336,9 +335,8 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
                 eventLog: opts.eventLog,
                 conversationLabels,
             });
-            registerDispatchesRoutes(api, { runtimes, bus, dispatchAborts });
+            registerDispatchesRoutes(api, { dispatchAborts });
             registerObservabilityRoutes(api, { bus });
-            registerAnimationRoutes(api, { bus });
             registerStreamRoutes(api, {
                 bus,
                 runtimes,

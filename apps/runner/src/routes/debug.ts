@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { DispatchEvent } from '@fabritorio/types';
 import type { DebugGatewayRegistry } from '../runtime/debug.js';
 import type { EventBus } from '../runtime/event-bus.js';
+import { writeSseHead } from '../runtime/sse.js';
 
 export interface DebugRoutesDeps {
     registry: DebugGatewayRegistry;
@@ -51,13 +52,7 @@ export function registerDebugRoutes(app: FastifyInstance, deps: DebugRoutesDeps)
             return reply;
         }
 
-        const origin = req.headers.origin;
-        reply.raw.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            Connection: 'keep-alive',
-            ...(origin ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {}),
-        });
+        writeSseHead(req, reply);
         reply.raw.write(`: connected\n\n`);
 
         const off = handle.subscribe((event: DispatchEvent) => {

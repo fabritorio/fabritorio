@@ -1,12 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import type {
-    Edge,
-    Graph,
-    GraphKind,
-    Node,
-    NodeRuntimeState,
-    NodeRuntimeStateWire,
-} from '@fabritorio/types';
+import type { Edge, Graph, GraphKind, Node, NodeRuntimeStateWire } from '@fabritorio/types';
 import { isValidGraphId, type GraphStore } from '../graphs/store.js';
 import {
     cloneGraphTree,
@@ -562,44 +555,6 @@ export function registerGraphRoutes(app: FastifyInstance, deps: GraphRoutesDeps)
             const loaded = runtimes.get(id);
             if (!loaded) return reply.code(404).send({ error: 'not loaded' });
             return snapshot(loaded);
-        },
-    );
-
-    app.get<{ Params: IdParam }>(
-        '/graphs/:id/status/stream',
-        async (req: FastifyRequest<{ Params: IdParam }>, reply: FastifyReply) => {
-            const { id } = req.params;
-            if (!isValidGraphId(id)) return reply.code(400).send({ error: 'invalid id' });
-            const loaded = runtimes.get(id);
-            if (!loaded) return reply.code(404).send({ error: 'not loaded' });
-
-            const origin = req.headers.origin;
-            reply.raw.writeHead(200, {
-                'content-type': 'text/event-stream',
-                'cache-control': 'no-cache, no-transform',
-                connection: 'keep-alive',
-                ...(origin ? { 'access-control-allow-origin': origin, vary: 'Origin' } : {}),
-            });
-            reply.raw.write(':\n\n');
-
-            const send = (states: ReadonlyMap<string, NodeRuntimeState>) => {
-                const running: NodeRuntimeStateWire[] = [...states.values()];
-                reply.raw.write(`data: ${JSON.stringify({ running })}\n\n`);
-            };
-            send(loaded.nodeStates);
-            const off = runtimes.subscribeNodeStates(id, (next) => send(next));
-            const close = () => {
-                off();
-                try {
-                    reply.raw.end();
-                } catch {
-                    // already closed
-                }
-            };
-            req.raw.on('close', close);
-            return new Promise<void>((resolve) => {
-                req.raw.on('close', () => resolve());
-            });
         },
     );
 }

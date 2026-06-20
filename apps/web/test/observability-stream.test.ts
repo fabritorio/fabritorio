@@ -108,15 +108,10 @@ describe('runnerClient.observabilityStream (multiplexed)', () => {
         expect(onEvent).not.toHaveBeenCalled();
     });
 
-    it('silently drops the snapshot-flagged sentinel frame (forward-only)', () => {
+    it('forwards observability frames verbatim', () => {
         const client = createRunnerClient(freshBase());
         const onEvent = vi.fn();
         client.observabilityStream({ event: onEvent });
-
-        expect(() =>
-            FakeEventSource.last!.emitFrame('observability', { snapshot: true, snapshotMax: 42 }),
-        ).not.toThrow();
-        expect(onEvent).not.toHaveBeenCalled();
 
         const env: DispatchStreamEvent = {
             seq: 5,
