@@ -59,49 +59,4 @@ export function registerPermissionRoutes(app: FastifyInstance, deps: PermissionR
             return reply.code(202).send({ ok: true });
         },
     );
-
-    app.get<{ Params: GateParams }>('/permission/:graphId/:nodeId/stream', (req, reply) => {
-        const handle = deps.registry.get(req.params.graphId, req.params.nodeId);
-        if (!handle) {
-            reply.code(404).send({ error: 'permission gate not loaded' });
-            return reply;
-        }
-
-        const origin = req.headers.origin;
-        reply.raw.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            Connection: 'keep-alive',
-            ...(origin ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {}),
-        });
-        reply.raw.write(`: connected\n\n`);
-
-        for (const seed of handle.pending()) {
-            reply.raw.write(`data: ${JSON.stringify(seed)}\n\n`);
-        }
-
-        const off = handle.subscribe((req) => {
-            reply.raw.write(`data: ${JSON.stringify(req)}\n\n`);
-        });
-        const offTeardown = handle.onTeardown(() => {
-            try {
-                reply.raw.end();
-            } catch {
-                /* socket already closed */
-            }
-        });
-
-        const close = () => {
-            off();
-            offTeardown();
-            try {
-                reply.raw.end();
-            } catch {
-                /* socket already closed */
-            }
-        };
-        req.raw.on('close', close);
-        req.raw.on('error', close);
-        return reply;
-    });
 }

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { DebugProbeRegistry } from '../runtime/debug-probe.js';
+import { writeSseHead } from '../runtime/sse.js';
 
 export interface DebugProbeRoutesDeps {
     registry: DebugProbeRegistry;
@@ -69,13 +70,7 @@ export function registerDebugProbeRoutes(app: FastifyInstance, deps: DebugProbeR
             return reply;
         }
 
-        const origin = req.headers.origin;
-        reply.raw.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            Connection: 'keep-alive',
-            ...(origin ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {}),
-        });
+        writeSseHead(req, reply);
         reply.raw.write(`: connected\n\n`);
 
         const seed = handle.pending();

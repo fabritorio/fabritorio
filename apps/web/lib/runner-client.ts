@@ -1061,8 +1061,6 @@ export function createRunnerClient(baseUrl = getDefaultBaseUrl()): RunnerClient 
                     /* degrade: live-only; mid-flight completes for pre-existing calls just won't pair */
                 });
             const off = getStreamHub(baseUrl).on('observability', (payload) => {
-                const p = payload as Record<string, unknown>;
-                if (p && p.snapshot === true) return;
                 const env = payload as DispatchStreamEvent;
                 if (!env || typeof env.seq !== 'number') return;
                 if (env.kind === 'dispatch') {
@@ -1126,8 +1124,6 @@ export function createRunnerClient(baseUrl = getDefaultBaseUrl()): RunnerClient 
             let ended = false;
             const off = getStreamHub(baseUrl).on('observability', (payload) => {
                 if (ended) return;
-                const p = payload as Record<string, unknown>;
-                if (p && p.snapshot === true) return;
                 const env = payload as DispatchStreamEvent;
                 if (!env || typeof env.seq !== 'number') return;
                 if (env.payload.eventId !== eventId) return;
@@ -1150,8 +1146,6 @@ export function createRunnerClient(baseUrl = getDefaultBaseUrl()): RunnerClient 
         },
         observabilityStream(handlers) {
             const off = getStreamHub(baseUrl).on('observability', (payload) => {
-                const p = payload as Record<string, unknown>;
-                if (p && p.snapshot === true) return;
                 handlers.event(payload as DispatchStreamEvent);
             });
             return { close: off };
