@@ -148,7 +148,6 @@ const KNOWN_GRAPH_KINDS: ReadonlySet<GraphKind> = new Set<GraphKind>([
     'toolpack',
     'skillpack',
     'handler',
-    'cli_invocation',
     'l1',
     'l2',
 ]);
@@ -180,15 +179,14 @@ const READ_GRAPH_SPEC: ToolSpec = {
 const CREATE_GRAPH_SPEC: ToolSpec = {
     name: 'create_graph',
     description:
-        'Create a new graph in the runner. Pass `kind` (toolpack, skillpack, handler, cli_invocation, l1, l2) and optional `name`, `description`, `nodes`, `edges`. Nodes/edges may be omitted to reserve an id and fill in via `edit_graph` later. Node positions are computed automatically — you do not need to supply them. **Node and edge ids are minted server-side**: omit `id` on each node/edge to let the runner mint a canonical `<prefix>-<short-uuid>` (e.g. `gateway-x3k9p2`). If you do supply ids (e.g. to wire edges to nodes in the same payload), the runner rewrites any that collide with existing graphs or are duplicated within the payload; the response includes a `remap` of old→new ids so you can resolve placeholder references. Returns `{ id, graph, remap }`.',
+        'Create a new graph in the runner. Pass `kind` (toolpack, skillpack, handler, l1, l2) and optional `name`, `description`, `nodes`, `edges`. Nodes/edges may be omitted to reserve an id and fill in via `edit_graph` later. Node positions are computed automatically — you do not need to supply them. **Node and edge ids are minted server-side**: omit `id` on each node/edge to let the runner mint a canonical `<prefix>-<short-uuid>` (e.g. `gateway-x3k9p2`). If you do supply ids (e.g. to wire edges to nodes in the same payload), the runner rewrites any that collide with existing graphs or are duplicated within the payload; the response includes a `remap` of old→new ids so you can resolve placeholder references. Returns `{ id, graph, remap }`.',
     parameters: {
         type: 'object',
         properties: {
             kind: {
                 type: 'string',
-                description:
-                    'Graph kind. One of: toolpack, skillpack, handler, cli_invocation, l1, l2.',
-                enum: ['toolpack', 'skillpack', 'handler', 'cli_invocation', 'l1', 'l2'],
+                description: 'Graph kind. One of: toolpack, skillpack, handler, l1, l2.',
+                enum: ['toolpack', 'skillpack', 'handler', 'l1', 'l2'],
             },
             name: { type: 'string', description: 'Optional human-readable name.' },
             description: {
@@ -784,7 +782,7 @@ export function createCreateGraphTool(
             if (!isKnownGraphKind(kind)) {
                 return {
                     stdout: '',
-                    stderr: 'kind must be one of: toolpack, skillpack, handler, cli_invocation, l1, l2',
+                    stderr: 'kind must be one of: toolpack, skillpack, handler, l1, l2',
                     exit_code: 1,
                 };
             }
@@ -862,7 +860,7 @@ export function createEditGraphTool(
             if (!isKnownGraphKind(kind)) {
                 return {
                     stdout: '',
-                    stderr: 'graph.kind must be one of: toolpack, skillpack, handler, cli_invocation, l1, l2',
+                    stderr: 'graph.kind must be one of: toolpack, skillpack, handler, l1, l2',
                     exit_code: 1,
                 };
             }

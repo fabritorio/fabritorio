@@ -6,7 +6,6 @@ import {
     classifyLibraryEntry,
     hiddenFragmentRefIds,
     paletteKindsForGraphKind,
-    type CliInvocationPaletteKind,
     type HandlerPaletteKind,
     type L1PaletteKind,
     type L2PaletteKind,
@@ -94,34 +93,6 @@ const HANDLER_ITEMS: Array<Item & { kind: HandlerPaletteKind }> = [
         kind: 'handler_output',
         label: 'Handler Output',
         hint: 'boundary · result/error ports',
-    },
-];
-
-const CLI_INVOCATION_ITEMS: Array<Item & { kind: CliInvocationPaletteKind }> = [
-    {
-        kind: 'cli_invocation_target',
-        label: 'Agent Target',
-        hint: 'visual anchor · wire other nodes into it',
-    },
-    {
-        kind: 'model',
-        label: 'Model',
-        hint: 'provider + model_id → CLI provider/model flags',
-    },
-    {
-        kind: 'workspace',
-        label: 'Workspace',
-        hint: 'path → CLI cwd',
-    },
-    {
-        kind: 'skill',
-        label: 'Skill',
-        hint: 'named skill → CLI --skill flag (or text context)',
-    },
-    {
-        kind: 'skill_pack',
-        label: 'Skill Pack',
-        hint: 'expands into wrapped Skill nodes',
     },
 ];
 
@@ -370,11 +341,9 @@ export function Palette({ graphKind, libraryRefreshKey = 0 }: Props) {
               ? SKILLPACK_ITEMS
               : graphKind === 'handler'
                 ? HANDLER_ITEMS
-                : graphKind === 'cli_invocation'
-                  ? CLI_INVOCATION_ITEMS
-                  : graphKind === 'l1'
-                    ? L1_ITEMS
-                    : L2_ITEMS;
+                : graphKind === 'l1'
+                  ? L1_ITEMS
+                  : L2_ITEMS;
     const items = source.filter((item) => allowed.has(item.kind));
 
     const groups = (() => {
@@ -416,11 +385,9 @@ export function Palette({ graphKind, libraryRefreshKey = 0 }: Props) {
               ? 'Skill Pack Palette'
               : graphKind === 'handler'
                 ? 'Handler Palette'
-                : graphKind === 'cli_invocation'
-                  ? 'CLI Config Palette'
-                  : graphKind === 'l1'
-                    ? 'L1 Palette'
-                    : 'L2 Palette';
+                : graphKind === 'l1'
+                  ? 'L1 Palette'
+                  : 'L2 Palette';
     const footerHint =
         graphKind === 'toolpack'
             ? 'Drop Tool nodes to populate this pack. The L1 ToolPack referencing this graph exposes them all to its Handler.'
@@ -428,11 +395,9 @@ export function Palette({ graphKind, libraryRefreshKey = 0 }: Props) {
               ? 'Drop Skill nodes to populate this pack. The L1 SkillPack referencing this graph exposes them all to its Handler.'
               : graphKind === 'handler'
                 ? 'Wire Handler Input → Prompt Builder → Model Call → Evaluator → Tool Exec / Handler Output. Loop tool_exec back into model_call.'
-                : graphKind === 'cli_invocation'
-                  ? 'Config envelope (read at Dispatch time, not executed). Drop a Model + Workspace + Skills; the parent CLI agent translates these into invocation flags.'
-                  : graphKind === 'l1'
-                    ? 'Gateway → Handler → Output (Gateway/Output ship with the starter). Drag a Handler/Model/Tool/Skill/Workspace and wire it between them.'
-                    : 'Channel/Trigger → NativeAgent / CliAgent / PiAgent → Channel. Wire Memory as a side reference.';
+                : graphKind === 'l1'
+                  ? 'Gateway → Handler → Output (Gateway/Output ship with the starter). Drag a Handler/Model/Tool/Skill/Workspace and wire it between them.'
+                  : 'Channel/Trigger → NativeAgent → Channel. Wire Memory as a side reference.';
 
     const onDragStart = (ev: DragEvent<HTMLDivElement>, itemKind: PaletteKind) => {
         ev.dataTransfer.setData(DRAG_MIME, itemKind);

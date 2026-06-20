@@ -33,9 +33,6 @@ import { createChannelRegistry, type ChannelRegistry } from './runtime/channels.
 import { createWebchatBinding } from './runtime/bindings/webchat.js';
 import { createNativeAgentBinding } from './runtime/bindings/native-agent.js';
 import { createMemoryBinding } from './runtime/bindings/memory.js';
-import { createCliAgentBinding } from './runtime/bindings/cli-agent.js';
-import { createGoClaudeAgentBinding } from './runtime/bindings/go-claude-agent.js';
-import { createPiAgentBinding } from './runtime/bindings/pi-agent.js';
 import { createTriggerBinding } from './runtime/bindings/trigger.js';
 import { createDebugGatewayBinding } from './runtime/bindings/debug-gateway.js';
 import { awaitProbesFor, createDebugProbeBinding } from './runtime/bindings/debug-probe.js';
@@ -59,7 +56,6 @@ import {
     type Scheduler,
 } from './runtime/triggers/cron.js';
 import { createScheduleStrategyFactory } from './runtime/triggers/schedule.js';
-import type { CliExecutor } from './runtime/cli-executor.js';
 import { createDefaultToolRegistry, type ToolRegistry } from './runtime/tools.js';
 import { createRuntimeToolRegistry, type RuntimeToolRegistry } from './runtime/runtime-tools.js';
 import { createSecretsStore, type SecretsStore } from './runtime/secrets-store.js';
@@ -122,7 +118,6 @@ export interface ServerOptions {
     cronScheduler?: Scheduler;
     intervalScheduler?: IntervalScheduler;
     modelClientFor?: (node: ModelNode) => ModelClient;
-    cliExecutor?: CliExecutor;
     eventLog?: EventLog;
     memoryDir?: string;
     conversationsDir?: string;
@@ -154,7 +149,6 @@ function createDefaultNodeRegistry(deps: {
     modelClientFor: (node: ModelNode) => ModelClient;
     handlerRegistry: HandlerRegistry;
     triggerStrategies: TriggerStrategyRegistry;
-    cliExecutor?: CliExecutor;
     runtimesRef: () => GraphRuntimeRegistry | undefined;
 }): NodeRegistry {
     const reg = createNodeRegistry();
@@ -174,32 +168,6 @@ function createDefaultNodeRegistry(deps: {
             permissionGateRegistry: deps.permissionGateRegistry,
             dispatchAborts: deps.dispatchAborts,
             runtimesRef: deps.runtimesRef,
-        }),
-    );
-    reg.register(
-        'cli_agent',
-        createCliAgentBinding({
-            memoryRegistry: deps.memoryRegistry,
-            skillRegistry: deps.skillRegistry,
-            graphStore: deps.graphStore,
-            ...(deps.cliExecutor ? { executor: deps.cliExecutor } : {}),
-        }),
-    );
-    reg.register(
-        'go_claude_agent',
-        createGoClaudeAgentBinding({
-            memoryRegistry: deps.memoryRegistry,
-            graphStore: deps.graphStore,
-            ...(deps.cliExecutor ? { executor: deps.cliExecutor } : {}),
-        }),
-    );
-    reg.register(
-        'pi_agent',
-        createPiAgentBinding({
-            memoryRegistry: deps.memoryRegistry,
-            skillRegistry: deps.skillRegistry,
-            graphStore: deps.graphStore,
-            ...(deps.cliExecutor ? { executor: deps.cliExecutor } : {}),
         }),
     );
     const { binding: debugBinding } = createDebugGatewayBinding({
@@ -272,7 +240,6 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
             handlerRegistry,
             triggerStrategies,
             runtimesRef,
-            ...(opts.cliExecutor ? { cliExecutor: opts.cliExecutor } : {}),
         });
     const runtimes =
         opts.runtimes ??

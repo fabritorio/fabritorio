@@ -93,22 +93,6 @@ describe('buildNode', () => {
         expect(n.l1_graph_id).toBe('');
     });
 
-    it('creates a cli_agent with go-claude defaults', () => {
-        const n = buildNode('cli_agent', { x: 0, y: 0 });
-        if (n.type !== 'cli_agent') throw new Error('unreachable');
-        expect(n.command).toBe('go-claude');
-        expect(n.session_mode).toBe('session-aware');
-    });
-
-    it('creates a pi_agent in session-aware mode with no command override', () => {
-        const n = buildNode('pi_agent', { x: 0, y: 0 });
-        if (n.type !== 'pi_agent') throw new Error('unreachable');
-        expect(n.session_mode).toBe('session-aware');
-        expect(n.command).toBeUndefined();
-        expect(n.provider).toBeUndefined();
-        expect(n.model).toBeUndefined();
-    });
-
     it('creates a memory node with in-memory storage', () => {
         const n = buildNode('memory', { x: 0, y: 0 });
         if (n.type !== 'memory') throw new Error('unreachable');

@@ -35,41 +35,6 @@ export interface NativeAgentNode extends BaseNode {
     description?: string;
 }
 
-export interface CliAgentNode extends BaseNode {
-    type: 'cli_agent';
-    command: string;
-    argv_template?: string;
-    session_mode: 'stateless' | 'session-aware';
-    cwd?: string;
-    output_format?: 'text' | 'jsonl';
-    display_name?: string;
-    description?: string;
-    ref_id?: string;
-}
-
-export interface GoClaudeAgentNode extends BaseNode {
-    type: 'go_claude_agent';
-    command?: string;
-    session_mode: 'stateless' | 'session-aware';
-    session_name?: string;
-    cwd?: string;
-    display_name?: string;
-    description?: string;
-    ref_id?: string;
-}
-
-export interface PiAgentNode extends BaseNode {
-    type: 'pi_agent';
-    command?: string;
-    session_mode: 'stateless' | 'session-aware';
-    provider?: string;
-    model?: string;
-    cwd?: string;
-    display_name?: string;
-    description?: string;
-    ref_id?: string;
-}
-
 export interface MemoryNode extends BaseNode {
     type: 'memory';
     storage: 'in_memory' | 'local_storage';

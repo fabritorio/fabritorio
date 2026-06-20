@@ -38,7 +38,6 @@ const GRAPH_KINDS: ReadonlySet<GraphKind> = new Set<GraphKind>([
     'toolpack',
     'skillpack',
     'handler',
-    'cli_invocation',
     'l1',
     'l2',
 ]);
@@ -57,7 +56,7 @@ function bodyToGraph(
     const { kind, nodes, edges, name, description, library } = body;
     if (!isGraphKind(kind)) {
         return {
-            error: "kind must be 'toolpack', 'skillpack', 'handler', 'cli_invocation', 'l1' or 'l2'",
+            error: "kind must be 'toolpack', 'skillpack', 'handler', 'l1' or 'l2'",
         };
     }
     if (!Array.isArray(nodes)) return { error: 'nodes must be an array' };
@@ -311,7 +310,7 @@ export function registerGraphRoutes(app: FastifyInstance, deps: GraphRoutesDeps)
         };
         if (!isGraphKind(kind)) {
             return reply.code(400).send({
-                error: "kind must be 'toolpack', 'skillpack', 'handler', 'cli_invocation', 'l1' or 'l2'",
+                error: "kind must be 'toolpack', 'skillpack', 'handler', 'l1' or 'l2'",
             });
         }
         if (!Array.isArray(nodes)) return reply.code(400).send({ error: 'nodes must be an array' });

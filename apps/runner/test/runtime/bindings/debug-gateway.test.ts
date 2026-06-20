@@ -25,7 +25,11 @@ function scriptedClient(replies: ScriptedReply[]): {
     let i = 0;
     const client: ModelClient = {
         async *complete(req) {
-            captured.push(req);
+            // Snapshot the messages at call time: the handler graph mutates the
+            // live `messages` array after the call returns (it appends the
+            // assistant reply), so a by-reference capture would otherwise show
+            // post-call state.
+            captured.push({ ...req, messages: req.messages.map((m) => ({ ...m })) });
             const reply = replies[i++];
             if (!reply) throw new Error('scripted client exhausted');
             if (reply.text) yield { delta: reply.text };

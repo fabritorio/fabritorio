@@ -17,20 +17,10 @@ const FALLBACK_HANDLER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
     'tool_exec',
     'evaluator',
 ]);
-const FALLBACK_CLI_INVOCATION_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
-    'model',
-    'workspace',
-    'skill',
-    'skill_pack',
-    'cli_invocation_target',
-]);
 const FALLBACK_L2_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
     'channel',
     'trigger',
     'native_agent',
-    'cli_agent',
-    'pi_agent',
-    'go_claude_agent',
     'memory',
     'debug_gateway',
     'debug_probe',
@@ -60,12 +50,6 @@ function humaniseType(type: NodeType): string {
             return 'Debug Probe';
         case 'native_agent':
             return 'NativeAgent';
-        case 'cli_agent':
-            return 'CliAgent';
-        case 'pi_agent':
-            return 'PiAgent';
-        case 'go_claude_agent':
-            return 'GoClaudeAgent';
         case 'handler_input':
             return 'Handler Input';
         case 'handler_output':
@@ -76,8 +60,6 @@ function humaniseType(type: NodeType): string {
             return 'Model Call';
         case 'tool_exec':
             return 'Tool Exec';
-        case 'cli_invocation_target':
-            return 'CLI Agent Target';
         default: {
             return type[0]!.toUpperCase() + type.slice(1);
         }
@@ -165,32 +147,10 @@ export function canConnectL2(
 }
 
 export function validateL2Graph(
-    nodes: ReadonlyArray<Node>,
-    edges: ReadonlyArray<{ source: { node_id: string }; target: { node_id: string } }>,
+    _nodes: ReadonlyArray<Node>,
+    _edges: ReadonlyArray<{ source: { node_id: string }; target: { node_id: string } }>,
 ): string[] {
-    const issues: string[] = [];
-    const byId = new Map(nodes.map((n) => [n.id, n]));
-
-    for (const e of edges) {
-        const s = byId.get(e.source.node_id);
-        const t = byId.get(e.target.node_id);
-        if (!s || !t) continue;
-        if (t.type === 'cli_agent' || t.type === 'pi_agent') {
-            if (
-                s.type === 'tool' ||
-                s.type === 'tool_pack' ||
-                s.type === 'model' ||
-                s.type === 'handler'
-            ) {
-                const agentLabel = t.type === 'cli_agent' ? 'CliAgent' : 'PiAgent';
-                issues.push(
-                    `${s.type} cannot attach to ${agentLabel} ${t.id} — wrap it in a NativeAgent instead`,
-                );
-            }
-        }
-    }
-
-    return issues;
+    return [];
 }
 
 export function canConnectToolPack(
@@ -229,25 +189,6 @@ export function canConnectSkillPack(
         };
     }
     return checkByPalette('skillpack', source.type, target.type);
-}
-
-export function canConnectCliInvocation(
-    nodes: ReadonlyArray<Node>,
-    sourceId: string,
-    targetId: string,
-): EdgeCheck {
-    if (sourceId === targetId) return { ok: false, reason: 'self-loop' };
-    const source = nodes.find((n) => n.id === sourceId);
-    const target = nodes.find((n) => n.id === targetId);
-    if (!source || !target) return { ok: false, reason: 'unknown node' };
-    const allowed = allowedTypesFor('cli_invocation', FALLBACK_CLI_INVOCATION_TYPES);
-    if (!allowed.has(source.type) || !allowed.has(target.type)) {
-        return {
-            ok: false,
-            reason: 'CLI config only accepts Model / Workspace / Skill / Skill Pack / Agent Target',
-        };
-    }
-    return checkByPalette('cli_invocation', source.type, target.type);
 }
 
 export function canConnectHandler(

@@ -221,14 +221,6 @@ describe('topology invariant: Channel↔Agent 1:1 + Trigger→Agent (Step 4)', (
             position: { x: 0, y: 0 },
             l1_graph_id: '00000000-0000-0000-0000-000000000000',
         }) satisfies Graph['nodes'][number];
-    const cliAgent = (id: string) =>
-        ({
-            id,
-            type: 'cli_agent' as const,
-            position: { x: 0, y: 0 },
-            command: 'echo',
-            session_mode: 'stateless' as const,
-        }) satisfies Graph['nodes'][number];
     const trigger = (id: string) =>
         ({
             id,
@@ -296,7 +288,7 @@ describe('topology invariant: Channel↔Agent 1:1 + Trigger→Agent (Step 4)', (
                 nativeAgent('orchestrator'),
                 nativeAgent('coder'),
                 nativeAgent('reviewer'),
-                cliAgent('bash'),
+                nativeAgent('bash'),
             ],
             edges: [
                 edge('e1', 'orchestrator', 'coder'),
@@ -311,7 +303,7 @@ describe('topology invariant: Channel↔Agent 1:1 + Trigger→Agent (Step 4)', (
 
     it('accepts a Trigger fanning out to many Agents', () => {
         const result = checkTopology({
-            nodes: [trigger('t1'), nativeAgent('a1'), nativeAgent('a2'), cliAgent('a3')],
+            nodes: [trigger('t1'), nativeAgent('a1'), nativeAgent('a2'), nativeAgent('a3')],
             edges: [edge('e1', 't1', 'a1'), edge('e2', 't1', 'a2'), edge('e3', 't1', 'a3')],
         });
         expect(result.ok).toBe(true);
@@ -655,10 +647,9 @@ describe('topology invariant — HTTP route mapping (Step 4)', () => {
                         },
                         {
                             id: 'a1',
-                            type: 'cli_agent',
+                            type: 'native_agent',
                             position: { x: 0, y: 0 },
-                            command: 'echo',
-                            session_mode: 'stateless',
+                            l1_graph_id: '00000000-0000-0000-0000-000000000000',
                         },
                     ],
                     edges: [{ id: 'e1', source: { node_id: 'c1' }, target: { node_id: 'a1' } }],

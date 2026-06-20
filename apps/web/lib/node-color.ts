@@ -11,8 +11,6 @@ export type Kind =
     | 'channel'
     | 'trigger'
     | 'native_agent'
-    | 'cli_agent'
-    | 'pi_agent'
     | 'memory'
     | 'handler_input'
     | 'handler_output'
@@ -20,7 +18,6 @@ export type Kind =
     | 'model_call'
     | 'tool_exec'
     | 'evaluator'
-    | 'cli_invocation_target'
     | 'debug_gateway'
     | 'debug_probe'
     | 'permission'
@@ -177,9 +174,6 @@ const FAMILY_HUE = {
 
 const KIND: Record<ColorKind, { family: keyof typeof FAMILY_HUE; step: Step }> = {
     native_agent: { family: 'agent', step: 1 },
-    cli_agent: { family: 'agent', step: 2 },
-    pi_agent: { family: 'agent', step: 3 },
-    cli_invocation_target: { family: 'agent', step: 2 },
     gateway: { family: 'boundary', step: 1 },
     output: { family: 'boundary', step: 2 },
     channel: { family: 'boundary', step: 1 },

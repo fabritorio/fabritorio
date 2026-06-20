@@ -39,8 +39,6 @@ import { HandlerNode } from './nodes/HandlerNode';
 import { ChannelNode } from './nodes/ChannelNode';
 import { TriggerNode } from './nodes/TriggerNode';
 import { NativeAgentNode } from './nodes/NativeAgentNode';
-import { CliAgentNode } from './nodes/CliAgentNode';
-import { PiAgentNode } from './nodes/PiAgentNode';
 import { MemoryNode } from './nodes/MemoryNode';
 import { HandlerInputNode } from './nodes/HandlerInputNode';
 import { HandlerOutputNode } from './nodes/HandlerOutputNode';
@@ -48,7 +46,6 @@ import { PromptBuilderNode } from './nodes/PromptBuilderNode';
 import { ModelCallNode } from './nodes/ModelCallNode';
 import { EvaluatorNode } from './nodes/EvaluatorNode';
 import { ToolExecNode } from './nodes/ToolExecNode';
-import { CliInvocationTargetNode } from './nodes/CliInvocationTargetNode';
 import { DebugGatewayNode } from './nodes/DebugGatewayNode';
 import { DebugProbeNode } from './nodes/DebugProbeNode';
 import { PermissionNode } from './nodes/PermissionNode';
@@ -62,7 +59,6 @@ import { buildNode, paletteKindsForGraphKind, type PaletteKind } from '@/lib/nod
 import { computeActiveEdges, computeNodeStates, type NodeStateMap } from '@/lib/node-state';
 import {
     canConnect,
-    canConnectCliInvocation,
     canConnectHandler,
     canConnectL2,
     canConnectSkillPack,
@@ -107,8 +103,6 @@ const nodeTypes = {
     channel: ChannelNode,
     trigger: TriggerNode,
     native_agent: NativeAgentNode,
-    cli_agent: CliAgentNode,
-    pi_agent: PiAgentNode,
     memory: MemoryNode,
     handler_input: HandlerInputNode,
     handler_output: HandlerOutputNode,
@@ -116,7 +110,6 @@ const nodeTypes = {
     model_call: ModelCallNode,
     evaluator: EvaluatorNode,
     tool_exec: ToolExecNode,
-    cli_invocation_target: CliInvocationTargetNode,
     debug_gateway: DebugGatewayNode,
     debug_probe: DebugProbeNode,
     permission: PermissionNode,
@@ -147,7 +140,6 @@ interface Props {
     cloneSubtree?: CloneSubtreeFn;
     setError?: (error: string | null) => void;
     onNodeDoubleClick?: (id: string, type: string) => void;
-    onPiAgentDrop?: (position: Position) => Promise<void> | void;
     onLibraryDrop?: (templateId: string, position: Position) => Promise<void> | void;
     onSaveSelectionPreset?: (fragment: Fragment & { name: string }) => Promise<void> | void;
     events?: ReadonlyArray<ObservabilityEvent>;
@@ -670,13 +662,6 @@ function CanvasInner(props: Props) {
             } else if (kind === 'handler') {
                 const check = canConnectHandler(props.nodes, connection.source, connection.target);
                 if (!check.ok) return;
-            } else if (kind === 'cli_invocation') {
-                const check = canConnectCliInvocation(
-                    props.nodes,
-                    connection.source,
-                    connection.target,
-                );
-                if (!check.ok) return;
             } else if (kind === 'l1') {
                 const check = canConnect(
                     props.nodes,
@@ -752,21 +737,9 @@ function CanvasInner(props: Props) {
                       ? canConnectSkillPack(props.nodes, connection.source, connection.target)
                       : kind === 'handler'
                         ? canConnectHandler(props.nodes, connection.source, connection.target)
-                        : kind === 'cli_invocation'
-                          ? canConnectCliInvocation(
-                                props.nodes,
-                                connection.source,
-                                connection.target,
-                            )
-                          : kind === 'l1'
-                            ? canConnect(props.nodes, connection.source, connection.target, sh, th)
-                            : canConnectL2(
-                                  props.nodes,
-                                  connection.source,
-                                  connection.target,
-                                  sh,
-                                  th,
-                              );
+                        : kind === 'l1'
+                          ? canConnect(props.nodes, connection.source, connection.target, sh, th)
+                          : canConnectL2(props.nodes, connection.source, connection.target, sh, th);
             return check.ok;
         },
         [props.graphKind, props.nodes],
@@ -874,10 +847,6 @@ function CanvasInner(props: Props) {
                 return;
             }
             const position = rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY });
-            if (kind === 'pi_agent' && props.onPiAgentDrop) {
-                void props.onPiAgentDrop(position);
-                return;
-            }
             const node = buildNode(kind, position);
             props.addNode(node);
             props.setSelectedNodeId(node.id);

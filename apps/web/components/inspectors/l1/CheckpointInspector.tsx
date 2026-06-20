@@ -2,11 +2,7 @@ import type { CheckpointCadence, CheckpointNode, Node } from '@fabritorio/types'
 import { GHOST_PREFIX } from '@/lib/ghost';
 import { HeaderRow, Label, Input, IntListInput, parseOptionalNumber } from '../shared';
 
-const STRATEGY_AGENT_TYPES: ReadonlySet<Node['type']> = new Set<Node['type']>([
-    'native_agent',
-    'cli_agent',
-    'pi_agent',
-]);
+const STRATEGY_AGENT_TYPES: ReadonlySet<Node['type']> = new Set<Node['type']>(['native_agent']);
 
 function agentLabel(node: Node): string {
     const named =

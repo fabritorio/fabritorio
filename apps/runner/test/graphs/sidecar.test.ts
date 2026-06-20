@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { applyOps } from '../../src/graphs/ops.js';
 import { ensureAgentSidecar, ensureAllAgentSidecars } from '../../src/graphs/sidecar.js';
 
-const AGENT_TYPES: NodeType[] = ['native_agent', 'cli_agent', 'go_claude_agent', 'pi_agent'];
+const AGENT_TYPES: NodeType[] = ['native_agent'];
 
 function emptyL2(): Graph {
     return { kind: 'l2', nodes: [], edges: [] };
@@ -149,7 +149,7 @@ describe('ensureAllAgentSidecars graph-level backfill', () => {
                     position: { x: 0, y: 0 },
                 },
                 { id: 'agent-1', type: 'native_agent', position: { x: 100, y: 0 } },
-                { id: 'agent-2', type: 'cli_agent', position: { x: 200, y: 0 } },
+                { id: 'agent-2', type: 'native_agent', position: { x: 200, y: 0 } },
             ],
             edges: [],
         };

@@ -1,6 +1,5 @@
 import type { Graph } from '@fabritorio/types';
 import {
-    STARTER_CLI_INVOCATION_ID,
     STARTER_HANDLER_ID,
     STARTER_L1_ID,
     STARTER_L2_ID,
@@ -21,7 +20,7 @@ function buildStarterHandlerGraph(): Omit<Graph, 'id' | 'created_at' | 'updated_
         kind: 'handler',
         name: 'Starter handler',
         description:
-            'Library template: canonical ReAct shape (handler_input → prompt_builder → model_call → evaluator, evaluator → tool_exec → model_call loop, evaluator → handler_output on done). Drop this onto an L1 Handler `ref_id` to customise the loop; the in-code SimpleHandler covers the same shape if you leave `ref_id` unset.',
+            'Library template: canonical ReAct shape (handler_input → prompt_builder → model_call → evaluator, evaluator → tool_exec → model_call loop, evaluator → handler_output on done). Drop this onto an L1 Handler `ref_id` to customise the loop; leaving `ref_id` unset runs the seeded default handler graph, which has this same shape.',
         library: true,
         system: true,
         nodes: [
@@ -173,39 +172,6 @@ function buildStarterSkillPackGraph(): Omit<Graph, 'id' | 'created_at' | 'update
     return autoLayoutDraft(draft);
 }
 
-function buildStarterCliInvocationGraph(): Omit<Graph, 'id' | 'created_at' | 'updated_at'> {
-    const draft: Omit<Graph, 'id' | 'created_at' | 'updated_at'> = {
-        kind: 'cli_invocation',
-        name: 'Starter CLI config',
-        description:
-            'Library template: Model → cli_invocation_target. Drops as a `pi_agent` / `cli_agent` `ref_id` on the parent L2; the CLI binding reads Model.provider / Model.model_id to build invocation flags at Dispatch time. Provider + model_id ship empty so the runner stamps the openai / gpt-4o-mini fallback on persist.',
-        library: true,
-        system: true,
-        nodes: [
-            {
-                id: 'model',
-                type: 'model',
-                position: { x: 0, y: 0 },
-                provider: '',
-                model_id: '',
-            },
-            {
-                id: 'cli-target',
-                type: 'cli_invocation_target',
-                position: { x: 0, y: 0 },
-            },
-        ],
-        edges: [
-            {
-                id: 'model->cli-target',
-                source: { node_id: 'model' },
-                target: { node_id: 'cli-target' },
-            },
-        ],
-    };
-    return autoLayoutDraft(draft);
-}
-
 function autoLayoutDraft(
     draft: Omit<Graph, 'id' | 'created_at' | 'updated_at'>,
 ): Omit<Graph, 'id' | 'created_at' | 'updated_at'> {
@@ -225,18 +191,13 @@ export async function seedStarterLibraryGraphs(store: GraphStore): Promise<{
     handler: Graph;
     toolpack: Graph;
     skillpack: Graph;
-    cliInvocation: Graph;
     l1: Graph;
     l2: Graph;
 }> {
     const handler = await store.seed(STARTER_HANDLER_ID, buildStarterHandlerGraph());
     const toolpack = await store.seed(STARTER_TOOLPACK_ID, buildStarterToolPackGraph());
     const skillpack = await store.seed(STARTER_SKILLPACK_ID, buildStarterSkillPackGraph());
-    const cliInvocation = await store.seed(
-        STARTER_CLI_INVOCATION_ID,
-        buildStarterCliInvocationGraph(),
-    );
     const l1 = await store.seed(STARTER_L1_ID, buildStarterL1Graph());
     const l2 = await store.seed(STARTER_L2_ID, buildStarterL2Graph());
-    return { handler, toolpack, skillpack, cliInvocation, l1, l2 };
+    return { handler, toolpack, skillpack, l1, l2 };
 }

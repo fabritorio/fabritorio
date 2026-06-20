@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import type { Node } from '@fabritorio/types';
 import {
     canConnect,
-    canConnectCliInvocation,
     canConnectHandler,
     canConnectL2,
     probeAttachCheck,
@@ -251,12 +250,11 @@ describe('canConnect', () => {
             position: { x: 0, y: 0 },
             l1_graph_id: '',
         };
-        const cli: Node = {
-            id: 'ca',
-            type: 'cli_agent',
+        const native2: Node = {
+            id: 'na2',
+            type: 'native_agent',
             position: { x: 0, y: 0 },
-            command: 'go-claude',
-            session_mode: 'session-aware',
+            l1_graph_id: '',
         };
         const memory: Node = {
             id: 'mem',
@@ -282,28 +280,12 @@ describe('canConnect', () => {
             expect(canConnectL2([channel, native], 'na', 'c').ok).toBe(true);
         });
 
-        it('allows Trigger → CliAgent', () => {
-            expect(canConnectL2([trigger, cli], 'tg', 'ca').ok).toBe(true);
-        });
-
-        it('allows Memory → CliAgent', () => {
-            expect(canConnectL2([memory, cli], 'mem', 'ca').ok).toBe(true);
+        it('allows Trigger → NativeAgent', () => {
+            expect(canConnectL2([trigger, native2], 'tg', 'na2').ok).toBe(true);
         });
 
         it('allows Memory → NativeAgent', () => {
             expect(canConnectL2([memory, native], 'mem', 'na').ok).toBe(true);
-        });
-
-        it('allows Channel → PiAgent and PiAgent → Channel', () => {
-            const pi: Node = {
-                id: 'pa',
-                type: 'pi_agent',
-                position: { x: 0, y: 0 },
-                session_mode: 'session-aware',
-            };
-            expect(canConnectL2([channel, pi], 'c', 'pa').ok).toBe(true);
-            expect(canConnectL2([channel, pi], 'pa', 'c').ok).toBe(true);
-            expect(canConnectL2([memory, pi], 'mem', 'pa').ok).toBe(true);
         });
 
         it('rejects Memory → Channel (Memory only attaches to Agents)', () => {
@@ -313,7 +295,7 @@ describe('canConnect', () => {
         });
 
         it('rejects L1 Tool on an L2 canvas', () => {
-            const res = canConnectL2([cli, l1Tool], 't', 'ca');
+            const res = canConnectL2([native2, l1Tool], 't', 'na2');
             expect(res.ok).toBe(false);
             expect(res.reason).toMatch(/L1 nodes belong inside/);
         });
@@ -336,10 +318,8 @@ describe('canConnect', () => {
         });
 
         it('allows Agent → Agent (ask_agent wire)', () => {
-            const callee: Node = { ...native, id: 'na2' };
-            expect(canConnectL2([native, callee], 'na', 'na2').ok).toBe(true);
-            expect(canConnectL2([native, cli], 'na', 'ca').ok).toBe(true);
-            expect(canConnectL2([cli, native], 'ca', 'na').ok).toBe(true);
+            expect(canConnectL2([native, native2], 'na', 'na2').ok).toBe(true);
+            expect(canConnectL2([native2, native], 'na2', 'na').ok).toBe(true);
         });
 
         it('rejects Channel → Channel', () => {
@@ -379,47 +359,6 @@ describe('canConnect', () => {
     });
 
     describe('validateL2Graph', () => {
-        it('flags Tool attached to CliAgent', () => {
-            const cli: Node = {
-                id: 'ca',
-                type: 'cli_agent',
-                position: { x: 0, y: 0 },
-                command: 'go-claude',
-                session_mode: 'session-aware',
-            };
-            const tool: Node = {
-                id: 't',
-                type: 'tool',
-                position: { x: 0, y: 0 },
-                tool_name: 'x',
-            };
-            const issues = validateL2Graph(
-                [cli, tool],
-                [{ source: { node_id: 't' }, target: { node_id: 'ca' } }],
-            );
-            expect(issues.some((i) => /tool cannot attach/i.test(i))).toBe(true);
-        });
-
-        it('flags Tool attached to PiAgent', () => {
-            const pi: Node = {
-                id: 'pa',
-                type: 'pi_agent',
-                position: { x: 0, y: 0 },
-                session_mode: 'session-aware',
-            };
-            const tool: Node = {
-                id: 't',
-                type: 'tool',
-                position: { x: 0, y: 0 },
-                tool_name: 'x',
-            };
-            const issues = validateL2Graph(
-                [pi, tool],
-                [{ source: { node_id: 't' }, target: { node_id: 'pa' } }],
-            );
-            expect(issues.some((i) => /PiAgent/.test(i))).toBe(true);
-        });
-
         it('passes a clean Channel/Native/Memory graph', () => {
             const channel: Node = {
                 id: 'c',
@@ -612,46 +551,5 @@ describe('DebugProbe attach edges', () => {
 
     it('rejects self-loop', () => {
         expect(probeAttachCheck([probe], probe.id, probe.id).ok).toBe(false);
-    });
-});
-
-describe('canConnectCliInvocation', () => {
-    const workspace: Node = {
-        id: 'w',
-        type: 'workspace',
-        position: { x: 0, y: 0 },
-        path: '/tmp/x',
-        permissions: 'read',
-    };
-    const skillPack: Node = {
-        id: 'p',
-        type: 'skill_pack',
-        position: { x: 0, y: 0 },
-    };
-
-    it('accepts Model / Workspace / Skill / Skill Pack edges', () => {
-        expect(canConnectCliInvocation([model, workspace], 'm', 'w').ok).toBe(true);
-        expect(canConnectCliInvocation([skill, skillPack], 's', 'p').ok).toBe(true);
-    });
-
-    it('rejects foreign types (e.g. gateway, tool, handler)', () => {
-        const tool: Node = {
-            id: 't',
-            type: 'tool',
-            position: { x: 0, y: 0 },
-            tool_name: 'x',
-        };
-        const handler: Node = {
-            id: 'h',
-            type: 'handler',
-            position: { x: 0, y: 0 },
-        };
-        expect(canConnectCliInvocation([model, gateway], 'g', 'm').ok).toBe(false);
-        expect(canConnectCliInvocation([model, tool], 'm', 't').ok).toBe(false);
-        expect(canConnectCliInvocation([model, handler], 'm', 'h').ok).toBe(false);
-    });
-
-    it('rejects self-loop', () => {
-        expect(canConnectCliInvocation([model], 'm', 'm').ok).toBe(false);
     });
 });

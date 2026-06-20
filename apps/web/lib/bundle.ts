@@ -18,12 +18,7 @@ function collectRefIds(node: Node): string[] {
         return out;
     }
     if (
-        (node.type === 'tool_pack' ||
-            node.type === 'skill_pack' ||
-            node.type === 'handler' ||
-            node.type === 'cli_agent' ||
-            node.type === 'pi_agent' ||
-            node.type === 'go_claude_agent') &&
+        (node.type === 'tool_pack' || node.type === 'skill_pack' || node.type === 'handler') &&
         typeof node.ref_id === 'string' &&
         node.ref_id.length > 0
     ) {
@@ -97,14 +92,7 @@ function rewriteRefsOnNode(node: Node, idMap: Map<string, string>): Node {
         const mapped = idMap.get(node.l1_graph_id);
         return mapped ? { ...node, l1_graph_id: mapped } : node;
     }
-    if (
-        node.type === 'tool_pack' ||
-        node.type === 'skill_pack' ||
-        node.type === 'handler' ||
-        node.type === 'cli_agent' ||
-        node.type === 'pi_agent' ||
-        node.type === 'go_claude_agent'
-    ) {
+    if (node.type === 'tool_pack' || node.type === 'skill_pack' || node.type === 'handler') {
         if (typeof node.ref_id === 'string' && node.ref_id.length > 0) {
             const mapped = idMap.get(node.ref_id);
             if (mapped) {

@@ -20,8 +20,6 @@ import { SecretsInspector } from './inspectors/l1/SecretsInspector';
 import { ChannelInspector } from './inspectors/l2/ChannelInspector';
 import { TriggerInspector } from './inspectors/l2/TriggerInspector';
 import { NativeAgentInspector } from './inspectors/l2/NativeAgentInspector';
-import { CliAgentInspector } from './inspectors/l2/CliAgentInspector';
-import { PiAgentInspector } from './inspectors/l2/PiAgentInspector';
 import { MemoryInspector } from './inspectors/l2/MemoryInspector';
 import { HandlerInputInspector } from './inspectors/l0/HandlerInputInspector';
 import { HandlerOutputInspector } from './inspectors/l0/HandlerOutputInspector';
@@ -29,7 +27,6 @@ import { PromptBuilderInspector } from './inspectors/l0/PromptBuilderInspector';
 import { ModelCallInspector } from './inspectors/l0/ModelCallInspector';
 import { ToolExecInspector } from './inspectors/l0/ToolExecInspector';
 import { EvaluatorInspector } from './inspectors/l0/EvaluatorInspector';
-import { CliInvocationTargetInspector } from './inspectors/l0/CliInvocationTargetInspector';
 import { DebugGatewayInspector } from './inspectors/debug/DebugGatewayInspector';
 import { DebugProbeInspector } from './inspectors/debug/DebugProbeInspector';
 
@@ -282,30 +279,6 @@ function NodeEditor({
                     onConversationDeleted={onConversationDeleted}
                 />
             );
-        case 'cli_agent':
-            return (
-                <CliAgentInspector
-                    node={node}
-                    onChange={onChange}
-                    client={client}
-                    currentGraphId={currentGraphId}
-                    allNodes={allNodes}
-                    onOpenChat={onOpenChat}
-                    onConversationDeleted={onConversationDeleted}
-                />
-            );
-        case 'pi_agent':
-            return (
-                <PiAgentInspector
-                    node={node}
-                    onChange={onChange}
-                    client={client}
-                    currentGraphId={currentGraphId}
-                    allNodes={allNodes}
-                    onOpenChat={onOpenChat}
-                    onConversationDeleted={onConversationDeleted}
-                />
-            );
         case 'memory':
             return <MemoryInspector node={node} onChange={onChange} client={client} />;
         case 'handler_input':
@@ -320,8 +293,6 @@ function NodeEditor({
             return <ToolExecInspector node={node} />;
         case 'evaluator':
             return <EvaluatorInspector node={node} />;
-        case 'cli_invocation_target':
-            return <CliInvocationTargetInspector node={node} onChange={onChange} />;
         case 'debug_gateway':
             return <DebugGatewayInspector node={node} onChange={onChange} />;
         case 'debug_probe':

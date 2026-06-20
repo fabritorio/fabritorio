@@ -22,4 +22,4 @@ export interface Edge {
     priority?: number;
 }
 
-export type GraphKind = 'toolpack' | 'skillpack' | 'handler' | 'cli_invocation' | 'l1' | 'l2';
+export type GraphKind = 'toolpack' | 'skillpack' | 'handler' | 'l1' | 'l2';
