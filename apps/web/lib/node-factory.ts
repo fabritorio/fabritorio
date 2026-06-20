@@ -1,8 +1,6 @@
 import type {
     ChannelNode,
-    CliAgentNode,
     CheckpointNode,
-    CliInvocationTargetNode,
     DebugGatewayNode,
     DebugProbeNode,
     EvaluatorNode,
@@ -19,7 +17,6 @@ import type {
     Node,
     OutputNode,
     PermissionNode,
-    PiAgentNode,
     Position,
     PromptBuilderNode,
     SecretsNode,
@@ -44,12 +41,6 @@ export type HandlerPaletteKind =
     | 'tool_exec'
     | 'evaluator'
     | 'debug_probe';
-export type CliInvocationPaletteKind =
-    | 'cli_invocation_target'
-    | 'model'
-    | 'workspace'
-    | 'skill'
-    | 'skill_pack';
 
 export type L1PaletteKind =
     | 'gateway'
@@ -73,8 +64,6 @@ export type L2PaletteKind =
     | 'trigger'
     | 'schedule'
     | 'native_agent'
-    | 'cli_agent'
-    | 'pi_agent'
     | 'memory'
     | 'debug_gateway'
     | 'debug_probe';
@@ -83,7 +72,6 @@ export type PaletteKind =
     | ToolPackPaletteKind
     | SkillPackPaletteKind
     | HandlerPaletteKind
-    | CliInvocationPaletteKind
     | L1PaletteKind
     | L2PaletteKind;
 
@@ -103,8 +91,6 @@ const PREFIX: Record<PaletteKind, string> = {
     trigger: 'trigger',
     schedule: 'schedule',
     native_agent: 'agent',
-    cli_agent: 'cli',
-    pi_agent: 'pi',
     memory: 'memory',
     handler_input: 'h-in',
     handler_output: 'h-out',
@@ -112,7 +98,6 @@ const PREFIX: Record<PaletteKind, string> = {
     model_call: 'model-call',
     tool_exec: 'tool-exec',
     evaluator: 'eval',
-    cli_invocation_target: 'cli-target',
     debug_gateway: 'debug',
     debug_probe: 'probe',
     permission: 'perm',
@@ -134,15 +119,6 @@ export const HANDLER_PALETTE_KINDS: ReadonlySet<HandlerPaletteKind> = new Set<Ha
     'evaluator',
     'debug_probe',
 ]);
-
-export const CLI_INVOCATION_PALETTE_KINDS: ReadonlySet<CliInvocationPaletteKind> =
-    new Set<CliInvocationPaletteKind>([
-        'cli_invocation_target',
-        'model',
-        'workspace',
-        'skill',
-        'skill_pack',
-    ]);
 
 export const L1_PALETTE_KINDS: ReadonlySet<L1PaletteKind> = new Set<L1PaletteKind>([
     'gateway',
@@ -167,8 +143,6 @@ export const L2_PALETTE_KINDS: ReadonlySet<L2PaletteKind> = new Set<L2PaletteKin
     'trigger',
     'schedule',
     'native_agent',
-    'cli_agent',
-    'pi_agent',
     'memory',
     'debug_gateway',
     'debug_probe',
@@ -182,8 +156,6 @@ export function paletteKindsForGraphKind(kind: GraphKind): ReadonlySet<PaletteKi
             return SKILLPACK_PALETTE_KINDS;
         case 'handler':
             return HANDLER_PALETTE_KINDS;
-        case 'cli_invocation':
-            return CLI_INVOCATION_PALETTE_KINDS;
         case 'l1':
             return L1_PALETTE_KINDS;
         case 'l2':
@@ -316,25 +288,6 @@ export function buildNode(kind: PaletteKind, position: Position): Node {
             };
             return node;
         }
-        case 'cli_agent': {
-            const node: CliAgentNode = {
-                id,
-                type: 'cli_agent',
-                position,
-                command: 'go-claude',
-                session_mode: 'session-aware',
-            };
-            return node;
-        }
-        case 'pi_agent': {
-            const node: PiAgentNode = {
-                id,
-                type: 'pi_agent',
-                position,
-                session_mode: 'session-aware',
-            };
-            return node;
-        }
         case 'memory': {
             const node: MemoryNode = {
                 id,
@@ -369,14 +322,6 @@ export function buildNode(kind: PaletteKind, position: Position): Node {
         }
         case 'evaluator': {
             const node: EvaluatorNode = { id, type: 'evaluator', position };
-            return node;
-        }
-        case 'cli_invocation_target': {
-            const node: CliInvocationTargetNode = {
-                id,
-                type: 'cli_invocation_target',
-                position,
-            };
             return node;
         }
         case 'debug_gateway': {
@@ -475,8 +420,6 @@ const PRESET_UNSAVABLE_TYPES: ReadonlySet<Node['type']> = new Set<Node['type']>(
     'tool_pack',
     'skill_pack',
     'native_agent',
-    'cli_agent',
-    'pi_agent',
     'debug_probe',
 ]);
 

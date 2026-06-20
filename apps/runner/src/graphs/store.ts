@@ -34,7 +34,7 @@ export function resolveGraphsDir(dir?: string): string {
     return join(homedir(), '.fabritorio', 'graphs');
 }
 
-const KNOWN_KINDS = new Set(['toolpack', 'skillpack', 'handler', 'cli_invocation', 'l1', 'l2']);
+const KNOWN_KINDS = new Set(['toolpack', 'skillpack', 'handler', 'l1', 'l2']);
 
 function isGraph(value: unknown): value is Graph {
     if (!value || typeof value !== 'object') return false;

@@ -93,9 +93,6 @@ const NATIVE_AGENT_PORTS = {
     workspaceIn: { id: 'workspace-in', kind: 'reference', direction: 'in' },
 } as const satisfies Record<string, PortDef>;
 
-const CLI_AGENT_PORTS = NATIVE_AGENT_PORTS;
-const PI_AGENT_PORTS = NATIVE_AGENT_PORTS;
-
 const MEMORY_PORTS = {
     out: { id: 'memory-out', kind: 'reference', direction: 'out' },
 } as const satisfies Record<string, PortDef>;
@@ -214,30 +211,6 @@ const NATIVE_AGENT_NODE: PaletteNodeSpec = {
     defaultedFields: [],
 };
 
-const CLI_AGENT_NODE: PaletteNodeSpec = {
-    inPorts: [
-        CLI_AGENT_PORTS.gatewayIn,
-        CLI_AGENT_PORTS.memoryIn,
-        CLI_AGENT_PORTS.skillsIn,
-        CLI_AGENT_PORTS.workspaceIn,
-    ],
-    outPorts: [CLI_AGENT_PORTS.outputOut],
-    requiredFields: ['ref_id'],
-    defaultedFields: [],
-};
-
-const PI_AGENT_NODE: PaletteNodeSpec = {
-    inPorts: [
-        PI_AGENT_PORTS.gatewayIn,
-        PI_AGENT_PORTS.memoryIn,
-        PI_AGENT_PORTS.skillsIn,
-        PI_AGENT_PORTS.workspaceIn,
-    ],
-    outPorts: [PI_AGENT_PORTS.outputOut],
-    requiredFields: ['ref_id'],
-    defaultedFields: [],
-};
-
 const MEMORY_NODE: PaletteNodeSpec = {
     inPorts: [],
     outPorts: [MEMORY_PORTS.out],
@@ -263,13 +236,6 @@ const MODEL_ROUTER_NODE: PaletteNodeSpec = {
     inPorts: [],
     outPorts: [],
     requiredFields: [],
-    defaultedFields: [],
-};
-
-const GO_CLAUDE_AGENT_NODE: PaletteNodeSpec = {
-    inPorts: [NATIVE_AGENT_PORTS.gatewayIn, NATIVE_AGENT_PORTS.memoryIn],
-    outPorts: [NATIVE_AGENT_PORTS.outputOut],
-    requiredFields: ['ref_id'],
     defaultedFields: [],
 };
 
@@ -315,13 +281,6 @@ const EVALUATOR_NODE: PaletteNodeSpec = {
     defaultedFields: [],
 };
 
-const CLI_INVOCATION_TARGET_NODE: PaletteNodeSpec = {
-    inPorts: [],
-    outPorts: [],
-    requiredFields: [],
-    defaultedFields: [],
-};
-
 const SECRETS_NODE: PaletteNodeSpec = {
     inPorts: [],
     outPorts: [SECRETS_PORTS.secretsOut],
@@ -346,9 +305,6 @@ const NODE_SPECS: Record<NodeType, PaletteNodeSpec> = {
     channel: CHANNEL_NODE,
     trigger: TRIGGER_NODE,
     native_agent: NATIVE_AGENT_NODE,
-    cli_agent: CLI_AGENT_NODE,
-    pi_agent: PI_AGENT_NODE,
-    go_claude_agent: GO_CLAUDE_AGENT_NODE,
     memory: MEMORY_NODE,
     debug_gateway: DEBUG_GATEWAY_NODE,
     debug_probe: DEBUG_PROBE_NODE,
@@ -358,7 +314,6 @@ const NODE_SPECS: Record<NodeType, PaletteNodeSpec> = {
     model_call: MODEL_CALL_NODE,
     tool_exec: TOOL_EXEC_NODE,
     evaluator: EVALUATOR_NODE,
-    cli_invocation_target: CLI_INVOCATION_TARGET_NODE,
 };
 
 interface PairOpts {
@@ -504,13 +459,13 @@ const L1_CONNECTIONS: ConnectionRule[] = [
     }),
 ];
 
-const L2_AGENT_TYPES: NodeType[] = ['native_agent', 'cli_agent', 'pi_agent', 'go_claude_agent'];
+const L2_AGENT_TYPES: NodeType[] = ['native_agent'];
 
-const L2_CHANNEL_MSG = 'Channel publishes to a NativeAgent / CliAgent / PiAgent';
-const L2_TRIGGER_MSG = 'Trigger publishes to a NativeAgent / CliAgent / PiAgent';
-const L2_DEBUG_GATEWAY_MSG = 'Debug Gateway publishes to a NativeAgent / CliAgent / PiAgent';
+const L2_CHANNEL_MSG = 'Channel publishes to a NativeAgent';
+const L2_TRIGGER_MSG = 'Trigger publishes to a NativeAgent';
+const L2_DEBUG_GATEWAY_MSG = 'Debug Gateway publishes to a NativeAgent';
 const L2_AGENT_MSG = 'Agent must target a Channel, Debug Gateway, or another Agent';
-const L2_MEMORY_MSG = 'Memory only attaches to NativeAgent / CliAgent / PiAgent';
+const L2_MEMORY_MSG = 'Memory only attaches to NativeAgent';
 
 const L2_CONNECTIONS: ConnectionRule[] = [
     ...L2_AGENT_TYPES.flatMap((agent) => [
@@ -594,21 +549,6 @@ const SKILLPACK_CONNECTIONS: ConnectionRule[] = [
     pair('skill_pack', 'skill_pack', { decorative: true, errorMessage: SKILLPACK_MSG }),
 ];
 
-const CLI_INVOCATION_TYPES: NodeType[] = [
-    'model',
-    'workspace',
-    'skill',
-    'skill_pack',
-    'cli_invocation_target',
-];
-const CLI_INVOCATION_MSG =
-    'CLI config only accepts Model / Workspace / Skill / Skill Pack / Agent Target';
-const CLI_INVOCATION_CONNECTIONS: ConnectionRule[] = CLI_INVOCATION_TYPES.flatMap((source) =>
-    CLI_INVOCATION_TYPES.filter((t) => t !== source).map((target) =>
-        pair(source, target, { decorative: true, errorMessage: CLI_INVOCATION_MSG }),
-    ),
-);
-
 const TOOLPACK_KIND: CompositeKindSpec = {
     allowedNodeTypes: ['tool', 'tool_pack'],
     decorativeEdges: true,
@@ -647,19 +587,11 @@ const L1_KIND: CompositeKindSpec = {
     topology: { singleGateway: true, requireOutput: true },
 };
 
-const CLI_INVOCATION_KIND: CompositeKindSpec = {
-    allowedNodeTypes: CLI_INVOCATION_TYPES,
-    decorativeEdges: true,
-};
-
 const L2_KIND: CompositeKindSpec = {
     allowedNodeTypes: [
         'channel',
         'trigger',
         'native_agent',
-        'cli_agent',
-        'pi_agent',
-        'go_claude_agent',
         'memory',
         'debug_gateway',
         'debug_probe',
@@ -675,7 +607,6 @@ export const palette: Palette = {
         toolpack: TOOLPACK_CONNECTIONS,
         skillpack: SKILLPACK_CONNECTIONS,
         handler: HANDLER_CONNECTIONS,
-        cli_invocation: CLI_INVOCATION_CONNECTIONS,
         l1: L1_CONNECTIONS,
         l2: L2_CONNECTIONS,
     },
@@ -683,7 +614,6 @@ export const palette: Palette = {
         toolpack: TOOLPACK_KIND,
         skillpack: SKILLPACK_KIND,
         handler: HANDLER_KIND,
-        cli_invocation: CLI_INVOCATION_KIND,
         l1: L1_KIND,
         l2: L2_KIND,
     },

@@ -9,7 +9,7 @@ import type { Tool } from '../tools.js';
 import type { SecretsStore } from '../secrets-store.js';
 import { redactSecrets } from '../secret-redaction.js';
 import type { Handler, HandlerCtx, HandlerResult } from './handler.js';
-import { resolveSystemPrompt } from './simple.js';
+import { resolveSystemPrompt } from './system-prompt.js';
 
 const MAX_PRIMITIVE_STEPS = 200;
 

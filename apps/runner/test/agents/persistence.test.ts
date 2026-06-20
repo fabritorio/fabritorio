@@ -136,7 +136,11 @@ async function bootRunner(opts: {
     const capturedRequests: CompleteRequest[] = [];
     const wrapped: ModelClient = {
         async *complete(req) {
-            capturedRequests.push(req);
+            // Snapshot the messages at call time: the handler graph mutates the
+            // live `messages` array after the call returns (it appends the
+            // assistant reply), so a by-reference capture would otherwise show
+            // post-call state.
+            capturedRequests.push({ ...req, messages: req.messages.map((m) => ({ ...m })) });
             yield* opts.client.complete(req);
         },
     };

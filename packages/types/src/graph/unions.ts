@@ -12,7 +12,6 @@ import type {
     ToolPackNode,
     WorkspaceNode,
 } from './agent.js';
-import type { CliInvocationTargetNode } from './cli-invocation.js';
 import type { DebugGatewayNode, DebugProbeNode } from './debug.js';
 import type {
     EvaluatorNode,
@@ -22,15 +21,7 @@ import type {
     PromptBuilderNode,
     ToolExecNode,
 } from './handler.js';
-import type {
-    ChannelNode,
-    CliAgentNode,
-    GoClaudeAgentNode,
-    MemoryNode,
-    NativeAgentNode,
-    PiAgentNode,
-    TriggerNode,
-} from './orchestration.js';
+import type { ChannelNode, MemoryNode, NativeAgentNode, TriggerNode } from './orchestration.js';
 import type { SecretsNode } from './secrets.js';
 
 export type ToolPackNodeContents = ToolNode | ToolPackNode;
@@ -45,13 +36,6 @@ export type HandlerNodeContents =
     | ToolExecNode
     | EvaluatorNode
     | DebugProbeNode;
-
-export type CliInvocationNodeContents =
-    | ModelNode
-    | WorkspaceNode
-    | SkillNode
-    | SkillPackNode
-    | CliInvocationTargetNode;
 
 export type Node =
     | GatewayNode
@@ -70,12 +54,8 @@ export type Node =
     | ChannelNode
     | TriggerNode
     | NativeAgentNode
-    | CliAgentNode
-    | GoClaudeAgentNode
-    | PiAgentNode
     | MemoryNode
     | DebugGatewayNode
     | DebugProbeNode
-    | HandlerNodeContents
-    | CliInvocationTargetNode;
+    | HandlerNodeContents;
 export type NodeType = Node['type'];

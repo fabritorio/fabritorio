@@ -43,7 +43,11 @@ import { createWebSearchTool } from '../web-search-tool.js';
 import type { GraphRuntimeRegistry } from '../graph-runtime.js';
 import type { Handler } from '../handlers/handler.js';
 import type { HandlerRegistry } from '../handlers/registry.js';
-import { buildSystemPrompt, type SimpleHandlerSkill } from '../handlers/simple.js';
+import {
+    DEFAULT_SIMPLE_HANDLER_ID,
+    buildDefaultSimpleHandlerGraph,
+} from '../handlers/default-graph.js';
+import { buildSystemPrompt, type HandlerSkillSummary } from '../handlers/system-prompt.js';
 import type { MemoryHandle } from '../memory.js';
 import { renderInjectedMemoryBlock } from '../memory.js';
 import type { ModelClient } from '../model.js';
@@ -207,8 +211,7 @@ export async function buildHandlerFromL1(
     // Expand a leading `~` so users can type `~/.fabritorio/...` in the
     // Workspace inspector without ending up with literal-`~` subtrees on
     // disk (write_file / edit_file resolve paths via Node's `path.resolve`,
-    // which doesn't expand tildes — that's a shell feature). CliAgent
-    // already does this for its cwd; mirroring it here closes the same
+    // which doesn't expand tildes — that's a shell feature). This closes the
     // foot-gun for built-in tools.
     const workspace: WorkspaceBinding | null = workspaceNode
         ? {
@@ -464,7 +467,7 @@ export async function buildHandlerFromL1(
     }
 
     const wiredSkillNames = new Set<string>();
-    const skillSummaries: SimpleHandlerSkill[] = [];
+    const skillSummaries: HandlerSkillSummary[] = [];
     const addSkill = (name: string) => {
         if (wiredSkillNames.has(name)) return;
         const loaded = deps.skillRegistry.get(name);
@@ -591,7 +594,7 @@ export async function buildHandlerFromL1(
     const baseNode: ModelNode | ModelRouterNode = directRouter ?? directModel!;
     const modelClient = buildModelClientForNode(baseNode);
 
-    let handlerGraph: Graph | null = null;
+    let handlerGraph: Graph;
     if (handler.ref_id) {
         const loaded = await deps.graphStore.get(handler.ref_id);
         if (!loaded) {
@@ -603,10 +606,15 @@ export async function buildHandlerFromL1(
             );
         }
         handlerGraph = loaded;
+    } else {
+        const seeded = await deps.graphStore.get(DEFAULT_SIMPLE_HANDLER_ID);
+        handlerGraph =
+            seeded && seeded.kind === 'handler'
+                ? seeded
+                : { id: DEFAULT_SIMPLE_HANDLER_ID, ...buildDefaultSimpleHandlerGraph() };
     }
 
-    const handlerName = handler.name ?? 'SimpleHandler';
-    const handlerInstance = deps.handlerRegistry.build(handlerName, {
+    const handlerInstance = deps.handlerRegistry.build({
         model: modelClient,
         modelId: modelNode.model_id,
         modelNodeId: modelNode.id,

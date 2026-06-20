@@ -67,12 +67,7 @@ export function refOf(node: Node): string | null {
     return null;
 }
 
-export const AGENT_NODE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
-    'native_agent',
-    'cli_agent',
-    'go_claude_agent',
-    'pi_agent',
-]);
+export const AGENT_NODE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>(['native_agent']);
 
 export function isAgentType(t: NodeType): boolean {
     return AGENT_NODE_TYPES.has(t);

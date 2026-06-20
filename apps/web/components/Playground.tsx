@@ -8,7 +8,6 @@ import type {
     NodeRuntimeStateWire,
     ObservabilityEvent,
     PermissionNode,
-    PiAgentNode,
     Position,
 } from '@fabritorio/types';
 import { useFabritorioStore } from '@/lib/store';
@@ -35,7 +34,6 @@ import {
     suggestPresetName,
     type SavedRefKind,
 } from '@/lib/node-factory';
-import { createCliInvocationGraph } from '@/lib/cli-invocation-bootstrap';
 import { sidecarChannelIdFor } from '@/lib/webchat';
 import type { Fragment } from '@/lib/subgraph';
 import { Canvas, type ParentContext } from './Canvas';
@@ -526,51 +524,6 @@ export function Playground({ graphId }: Props) {
         [client, setError],
     );
 
-    const onPiAgentDrop = useCallback(
-        async (position: Position) => {
-            if (!currentGraphId) {
-                setError('Drop the agent on a saved canvas first.');
-                return;
-            }
-            try {
-                const seed = await createCliInvocationGraph(client, {
-                    defaultName: 'pi config',
-                    targetDisplayName: 'pi',
-                });
-                const placeholderId = nextNodeId('pi_agent');
-                const optimistic: PiAgentNode = {
-                    id: placeholderId,
-                    type: 'pi_agent',
-                    position,
-                    session_mode: 'session-aware',
-                    ref_id: seed.id,
-                };
-                addNode(optimistic);
-                setSelectedNodeId(optimistic.id);
-                const placeholder = `$opt-${placeholderId}`;
-                const result = await client.applyGraphOps(currentGraphId, [
-                    {
-                        op: 'add_node',
-                        kind: 'pi_agent',
-                        position,
-                        config: { ref_id: seed.id, session_mode: 'session-aware' },
-                        as: placeholder,
-                    },
-                ]);
-                const translated: Record<string, string> = {
-                    ...result.remap,
-                    [placeholderId]: result.remap[placeholder] ?? placeholderId,
-                };
-                applyOpsResult(result.graph, translated);
-            } catch (err) {
-                setError(
-                    `Could not create PiAgent config graph: ${err instanceof Error ? err.message : String(err)}`,
-                );
-            }
-        },
-        [addNode, applyOpsResult, client, currentGraphId, setError, setSelectedNodeId],
-    );
-
     return (
         <div className="grid h-screen w-screen grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_240px] bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
             <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-2 dark:border-zinc-800 dark:bg-zinc-900">
@@ -664,7 +617,6 @@ export function Playground({ graphId }: Props) {
                         onOpsApplied={applyOpsResult}
                         setError={setError}
                         onNodeDoubleClick={onNodeDoubleClick}
-                        onPiAgentDrop={onPiAgentDrop}
                         onLibraryDrop={onLibraryDrop}
                         onSaveSelectionPreset={onSaveSelectionPreset}
                         events={observabilityEvents}

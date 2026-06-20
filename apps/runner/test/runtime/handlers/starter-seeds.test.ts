@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-    STARTER_CLI_INVOCATION_ID,
     STARTER_HANDLER_ID,
     STARTER_IDS,
     STARTER_L1_ID,
@@ -28,7 +27,7 @@ describe('seedStarterLibraryGraphs', () => {
         rmSync(graphsDir, { recursive: true, force: true });
     });
 
-    it('seeds all six starters at their stable ids with the expected kinds + library/system flags', async () => {
+    it('seeds all five starters at their stable ids with the expected kinds + library/system flags', async () => {
         const store = createGraphStore({ dir: graphsDir });
         const result = await seedStarterLibraryGraphs(store);
 
@@ -37,23 +36,14 @@ describe('seedStarterLibraryGraphs', () => {
         expect(result.l2.id).toBe(STARTER_L2_ID);
         expect(result.toolpack.id).toBe(STARTER_TOOLPACK_ID);
         expect(result.skillpack.id).toBe(STARTER_SKILLPACK_ID);
-        expect(result.cliInvocation.id).toBe(STARTER_CLI_INVOCATION_ID);
 
         expect(result.handler.kind).toBe('handler');
         expect(result.l1.kind).toBe('l1');
         expect(result.l2.kind).toBe('l2');
         expect(result.toolpack.kind).toBe('toolpack');
         expect(result.skillpack.kind).toBe('skillpack');
-        expect(result.cliInvocation.kind).toBe('cli_invocation');
 
-        for (const g of [
-            result.handler,
-            result.l1,
-            result.l2,
-            result.toolpack,
-            result.skillpack,
-            result.cliInvocation,
-        ]) {
+        for (const g of [result.handler, result.l1, result.l2, result.toolpack, result.skillpack]) {
             expect(g.library).toBe(true);
             expect(g.system).toBe(true);
         }
@@ -65,7 +55,6 @@ describe('seedStarterLibraryGraphs', () => {
         expect(STARTER_IDS.l2).toBe(STARTER_L2_ID);
         expect(STARTER_IDS.toolpack).toBe(STARTER_TOOLPACK_ID);
         expect(STARTER_IDS.skillpack).toBe(STARTER_SKILLPACK_ID);
-        expect(STARTER_IDS.cli_invocation).toBe(STARTER_CLI_INVOCATION_ID);
     });
 
     it('starter handler is the canonical ReAct shape (input → prompt_builder → model_call → evaluator ↔ tool_exec → handler_output)', async () => {
@@ -158,27 +147,6 @@ describe('seedStarterLibraryGraphs', () => {
         expect(toolpack?.edges).toHaveLength(0);
         expect(skillpack?.nodes).toHaveLength(0);
         expect(skillpack?.edges).toHaveLength(0);
-    });
-
-    it('starter cli_invocation is Model → cli_invocation_target with blank provider/model_id', async () => {
-        const store = createGraphStore({ dir: graphsDir });
-        await seedStarterLibraryGraphs(store);
-        const cli = await store.get(STARTER_CLI_INVOCATION_ID);
-        expect(cli).toBeDefined();
-
-        const types = cli!.nodes.map((n) => n.type).sort();
-        expect(types).toEqual(['cli_invocation_target', 'model']);
-
-        const model = cli!.nodes.find((n) => n.type === 'model') as
-            | { provider?: string; model_id?: string }
-            | undefined;
-        expect(model?.provider).toBe('');
-        expect(model?.model_id).toBe('');
-
-        expect(cli!.edges).toHaveLength(1);
-        const edge = cli!.edges[0]!;
-        expect(edge.source.node_id).toBe('model');
-        expect(edge.target.node_id).toBe('cli-target');
     });
 
     it('instantiating the L2 starter deep-copies the L1 cascade (by-value drop)', async () => {
